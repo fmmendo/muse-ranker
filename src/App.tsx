@@ -4,12 +4,18 @@ import { useRankingSession } from './session/useRankingSession'
 import { CompareView } from './components/CompareView'
 import { RankingsView } from './components/RankingsView'
 import { albumColor } from './data/albumColors'
+import type { RankerRepository } from './data/repository'
 import type { Item } from './domain/types'
 
 type Tab = 'compare' | 'rankings'
 
-function App() {
-  const session = useRankingSession(muse)
+interface AppProps {
+  /** Injectable for tests/previews; defaults to the Dexie-backed repository. */
+  repository?: RankerRepository
+}
+
+function App({ repository }: AppProps = {}) {
+  const session = useRankingSession(muse, undefined, repository)
   const [tab, setTab] = useState<Tab>('compare')
 
   const albumNameByGroupId = useMemo(
@@ -32,6 +38,16 @@ function App() {
     session.totalComparisons === 1 ? '' : 's'
   }`
 
+  const handleReset = () => {
+    if (
+      window.confirm(
+        `Clear all ${session.totalComparisons} comparisons for ${muse.collection.name}? This cannot be undone.`,
+      )
+    ) {
+      session.reset()
+    }
+  }
+
   return (
     <main className="mx-auto flex min-h-svh max-w-2xl flex-col gap-8 px-6 py-10 text-slate-900 dark:text-slate-100">
       <header className="flex flex-col gap-4">
@@ -39,8 +55,19 @@ function App() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Preference Ranker
           </h1>
-          <span className="text-sm text-slate-400">
-            {muse.collection.name} · {comparisonLabel}
+          <span className="flex items-center gap-3 text-sm text-slate-400">
+            <span>
+              {muse.collection.name} · {comparisonLabel}
+            </span>
+            {session.totalComparisons > 0 && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="underline-offset-4 transition hover:text-rose-500 hover:underline"
+              >
+                Reset
+              </button>
+            )}
           </span>
         </div>
 
@@ -60,7 +87,9 @@ function App() {
         </nav>
       </header>
 
-      {tab === 'compare' ? (
+      {!session.loaded ? (
+        <p className="text-center text-slate-400">Loading…</p>
+      ) : tab === 'compare' ? (
         <CompareView
           pair={session.pair}
           onChoose={session.choose}

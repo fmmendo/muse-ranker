@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { BuiltCollection } from '../data/buildCollection'
 import type { Comparison, Id, Item } from '../domain/types'
 import { DEFAULT_ELO_CONFIG, type EloConfig } from '../engine/elo'
 import { generateRanking, type RankedItem } from '../engine/ranking'
 import { randomPair } from '../engine/pairSelection'
 import { replayComparisons } from '../engine/replay'
+import { defaultRepository, type RankerRepository } from '../data/repository'
 
 export interface RankedRow extends RankedItem {
   item: Item
@@ -21,6 +22,10 @@ export interface RankingSession {
   /** Undo the most recent choice and bring that pair back up. */
   undo: () => void
   canUndo: boolean
+  /** Clear all comparisons for this collection. */
+  reset: () => void
+  /** True once persisted comparisons have been loaded from storage. */
+  loaded: boolean
   /** Full leaderboard, best first, joined with item + album details. */
   ranking: RankedRow[]
   totalComparisons: number
@@ -28,16 +33,19 @@ export interface RankingSession {
 }
 
 /**
- * In-memory ranking session over a built collection. Ratings are derived by
- * replaying the comparison log, so state is always a pure function of that log —
- * which makes undo (and later, load-from-storage) trivial and correct. M5 will
- * back the comparison log with a repository without changing this surface.
+ * Ranking session over a built collection, persisted through a repository.
+ * Ratings are derived by replaying the comparison log, so state is always a pure
+ * function of that log — which makes undo, reset and load-from-storage trivially
+ * correct. Only the log is persisted; ratings are recomputed.
  */
 export function useRankingSession(
   collection: BuiltCollection,
   config: EloConfig = DEFAULT_ELO_CONFIG,
+  repository?: RankerRepository,
 ): RankingSession {
+  const repo = useMemo(() => repository ?? defaultRepository(), [repository])
   const seedDate = collection.collection.createdDate
+  const collectionId = collection.collection.id
 
   const itemsById = useMemo(
     () => new Map(collection.items.map((i) => [i.id, i])),
@@ -53,9 +61,26 @@ export function useRankingSession(
   )
 
   const [comparisons, setComparisons] = useState<Comparison[]>([])
+  const [loaded, setLoaded] = useState(false)
   const [pair, setPair] = useState<[Item, Item]>(() =>
     randomPair(collection.items),
   )
+
+  // Seed static data on first run, then hydrate the comparison log.
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      await repo.ensureSeeded(collection)
+      const stored = await repo.getComparisons(collectionId)
+      if (!cancelled) {
+        setComparisons(stored)
+        setLoaded(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [repo, collection, collectionId])
 
   const ratings = useMemo(
     () => replayComparisons(itemIds, comparisons, seedDate, config),
@@ -65,20 +90,19 @@ export function useRankingSession(
   const choose = useCallback(
     (winnerId: Id, loserId: Id) => {
       void loserId // loser is derived from the pair when replaying
-      setComparisons((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          collectionId: collection.collection.id,
-          itemAId: pair[0].id,
-          itemBId: pair[1].id,
-          winnerId,
-          timestamp: new Date().toISOString(),
-        },
-      ])
+      const comparison: Comparison = {
+        id: crypto.randomUUID(),
+        collectionId,
+        itemAId: pair[0].id,
+        itemBId: pair[1].id,
+        winnerId,
+        timestamp: new Date().toISOString(),
+      }
+      setComparisons((prev) => [...prev, comparison])
       setPair(randomPair(collection.items))
+      void repo.addComparison(comparison)
     },
-    [collection.collection.id, collection.items, pair],
+    [collectionId, collection.items, pair, repo],
   )
 
   const skip = useCallback(() => {
@@ -92,7 +116,14 @@ export function useRankingSession(
     const b = itemsById.get(last.itemBId)
     if (a && b) setPair([a, b]) // bring the undone pair back up to redo
     setComparisons((prev) => prev.slice(0, -1))
-  }, [comparisons, itemsById])
+    void repo.deleteComparison(last.id)
+  }, [comparisons, itemsById, repo])
+
+  const reset = useCallback(() => {
+    setComparisons([])
+    setPair(randomPair(collection.items))
+    void repo.clearComparisons(collectionId)
+  }, [collection.items, collectionId, repo])
 
   const ranking = useMemo<RankedRow[]>(() => {
     return generateRanking([...ratings.values()]).map((ranked) => {
@@ -113,6 +144,8 @@ export function useRankingSession(
     skip,
     undo,
     canUndo: comparisons.length > 0,
+    reset,
+    loaded,
     ranking,
     totalComparisons: comparisons.length,
     itemsById,
