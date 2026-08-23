@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { BuiltCollection } from '../data/buildCollection'
-import type { Comparison, Id, Item } from '../domain/types'
+import {
+  DEFAULT_SETTINGS,
+  type Comparison,
+  type Id,
+  type Item,
+  type PairSelectionWeights,
+} from '../domain/types'
 import { DEFAULT_ELO_CONFIG, type EloConfig } from '../engine/elo'
 import { generateRanking, type RankedItem } from '../engine/ranking'
-import { randomPair } from '../engine/pairSelection'
+import { randomPair, selectPair, pairKey } from '../engine/pairSelection'
 import { replayComparisons } from '../engine/replay'
 import { defaultRepository, type RankerRepository } from '../data/repository'
 
@@ -46,6 +52,8 @@ export function useRankingSession(
   const repo = useMemo(() => repository ?? defaultRepository(), [repository])
   const seedDate = collection.collection.createdDate
   const collectionId = collection.collection.id
+  // Pair-selection weights are fixed for now; M10 will make them configurable.
+  const weights: PairSelectionWeights = DEFAULT_SETTINGS.pairSelectionWeights
 
   const itemsById = useMemo(
     () => new Map(collection.items.map((i) => [i.id, i])),
@@ -74,13 +82,25 @@ export function useRankingSession(
       const stored = await repo.getComparisons(collectionId)
       if (!cancelled) {
         setComparisons(stored)
+        if (stored.length > 0) {
+          // Pick a smart first pair based on the restored history.
+          const restored = replayComparisons(itemIds, stored, seedDate, config)
+          setPair(
+            selectPair({
+              items: collection.items,
+              ratings: restored,
+              comparisons: stored,
+              weights,
+            }),
+          )
+        }
         setLoaded(true)
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [repo, collection, collectionId])
+  }, [repo, collection, collectionId, itemIds, seedDate, config, weights])
 
   const ratings = useMemo(
     () => replayComparisons(itemIds, comparisons, seedDate, config),
@@ -98,16 +118,49 @@ export function useRankingSession(
         winnerId,
         timestamp: new Date().toISOString(),
       }
-      setComparisons((prev) => [...prev, comparison])
-      setPair(randomPair(collection.items))
+      const nextComparisons = [...comparisons, comparison]
+      const nextRatings = replayComparisons(
+        itemIds,
+        nextComparisons,
+        seedDate,
+        config,
+      )
+      setComparisons(nextComparisons)
+      setPair(
+        selectPair({
+          items: collection.items,
+          ratings: nextRatings,
+          comparisons: nextComparisons,
+          weights,
+          avoidPairKey: pairKey(pair[0].id, pair[1].id),
+        }),
+      )
       void repo.addComparison(comparison)
     },
-    [collectionId, collection.items, pair, repo],
+    [
+      collectionId,
+      collection.items,
+      comparisons,
+      itemIds,
+      seedDate,
+      config,
+      weights,
+      pair,
+      repo,
+    ],
   )
 
   const skip = useCallback(() => {
-    setPair(randomPair(collection.items))
-  }, [collection.items])
+    setPair(
+      selectPair({
+        items: collection.items,
+        ratings,
+        comparisons,
+        weights,
+        avoidPairKey: pairKey(pair[0].id, pair[1].id),
+      }),
+    )
+  }, [collection.items, ratings, comparisons, weights, pair])
 
   const undo = useCallback(() => {
     if (comparisons.length === 0) return
