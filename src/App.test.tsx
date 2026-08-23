@@ -88,6 +88,19 @@ describe('App', () => {
     expect(screen.getByText(/not yet compared/i)).toBeInTheDocument()
   })
 
+  it('shows the albums view aggregated from song scores', async () => {
+    const user = userEvent.setup()
+    renderApp()
+
+    const choices = await screen.findAllByRole('button', { name: /^choose /i })
+    await user.click(choices[0])
+
+    await user.click(screen.getByRole('button', { name: /^albums$/i }))
+    expect(screen.getByText(/rewards consistency/i)).toBeInTheDocument()
+    const table = screen.getByRole('table')
+    expect(within(table).getAllByRole('row').length).toBeGreaterThan(1)
+  })
+
   it('shows an empty-state message in rankings before any comparison', async () => {
     const user = userEvent.setup()
     renderApp()

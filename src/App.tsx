@@ -7,12 +7,20 @@ import {
   type DefinitiveRow,
   type RankingsMode,
 } from './components/RankingsView'
+import {
+  AlbumsView,
+  type AlbumRow,
+  type AlbumSort,
+} from './components/AlbumsView'
 import { albumColor } from './data/albumColors'
 import { fitBradleyTerry } from './engine/bradleyTerry'
+import { aggregateByGroup, type GroupMember } from './engine/aggregation'
 import type { RankerRepository } from './data/repository'
 import type { Item } from './domain/types'
 
-type Tab = 'compare' | 'rankings'
+type Tab = 'compare' | 'rankings' | 'albums'
+
+const ALBUM_TOP_N = 3
 
 interface AppProps {
   /** Injectable for tests/previews; defaults to the Dexie-backed repository. */
@@ -23,9 +31,23 @@ function App({ repository }: AppProps = {}) {
   const session = useRankingSession(muse, undefined, repository)
   const [tab, setTab] = useState<Tab>('compare')
   const [rankMode, setRankMode] = useState<RankingsMode>('live')
+  const [albumMode, setAlbumMode] = useState<RankingsMode>('live')
+  const [albumSort, setAlbumSort] = useState<AlbumSort>('mean')
+  const [includeBonus, setIncludeBonus] = useState(false)
 
   const albumNameByGroupId = useMemo(
     () => new Map(muse.groups.map((g) => [g.id, g.name])),
+    [],
+  )
+
+  const groupInfoById = useMemo(
+    () =>
+      new Map(
+        muse.groups.map((g) => [
+          g.id,
+          { name: g.name, year: g.metadata?.year as number | undefined },
+        ]),
+      ),
     [],
   )
 
@@ -73,6 +95,62 @@ function App({ repository }: AppProps = {}) {
     })
     return { rows, unranked: muse.items.length - rated.length }
   }, [rankMode, session.comparisons, session.itemsById, albumNameByGroupId])
+
+  // Album aggregation (only computed while the Albums tab is showing).
+  const albums = useMemo<AlbumRow[]>(() => {
+    if (tab !== 'albums') return []
+
+    let members: GroupMember[]
+    if (albumMode === 'definitive') {
+      const fit = fitBradleyTerry(
+        muse.items.map((i) => i.id),
+        session.comparisons,
+      )
+      members = fit.results.map((r) => {
+        const item = session.itemsById.get(r.itemId)!
+        return {
+          groupId: item.groupId ?? '',
+          score: r.score,
+          interval95: r.interval95,
+          excluded: !includeBonus && item.metadata?.isBonus === true,
+        }
+      })
+    } else {
+      members = session.ranking.map((row) => ({
+        groupId: row.item.groupId ?? '',
+        score: row.rating.score,
+        excluded: !includeBonus && row.item.metadata?.isBonus === true,
+      }))
+    }
+
+    const aggregates = aggregateByGroup(members, ALBUM_TOP_N)
+    const rows = aggregates.map((g) => {
+      const info = groupInfoById.get(g.groupId)
+      return {
+        groupId: g.groupId,
+        name: info?.name ?? '',
+        year: info?.year,
+        meanScore: g.mean.score,
+        meanInterval: g.mean.interval95,
+        topNScore: g.topN.score,
+        topNInterval: g.topN.interval95,
+        songCount: g.mean.count,
+      }
+    })
+
+    const key = albumSort === 'mean' ? 'meanScore' : 'topNScore'
+    rows.sort((a, b) => b[key] - a[key])
+    return rows.map((r, i) => ({ ...r, rank: i + 1 }))
+  }, [
+    tab,
+    albumMode,
+    albumSort,
+    includeBonus,
+    session.comparisons,
+    session.ranking,
+    session.itemsById,
+    groupInfoById,
+  ])
 
   const comparisonLabel = `${session.totalComparisons} comparison${
     session.totalComparisons === 1 ? '' : 's'
@@ -124,6 +202,9 @@ function App({ repository }: AppProps = {}) {
           >
             Rankings
           </TabButton>
+          <TabButton active={tab === 'albums'} onClick={() => setTab('albums')}>
+            Albums
+          </TabButton>
         </nav>
       </header>
 
@@ -139,13 +220,25 @@ function App({ repository }: AppProps = {}) {
           albumLabel={albumLabel}
           albumColor={albumColorOf}
         />
-      ) : (
+      ) : tab === 'rankings' ? (
         <RankingsView
           mode={rankMode}
           onModeChange={setRankMode}
           liveRanking={session.ranking}
           definitiveRanking={definitive.rows}
           unrankedCount={definitive.unranked}
+          totalComparisons={session.totalComparisons}
+        />
+      ) : (
+        <AlbumsView
+          mode={albumMode}
+          onModeChange={setAlbumMode}
+          includeBonus={includeBonus}
+          onIncludeBonusChange={setIncludeBonus}
+          sortBy={albumSort}
+          onSortChange={setAlbumSort}
+          topN={ALBUM_TOP_N}
+          albums={albums}
           totalComparisons={session.totalComparisons}
         />
       )}
