@@ -101,6 +101,18 @@ describe('App', () => {
     expect(within(table).getAllByRole('row').length).toBeGreaterThan(1)
   })
 
+  it('shows session statistics', async () => {
+    const user = userEvent.setup()
+    renderApp()
+
+    const choices = await screen.findAllByRole('button', { name: /^choose /i })
+    await user.click(choices[0])
+
+    await user.click(screen.getByRole('button', { name: /^stats$/i }))
+    expect(screen.getByText(/confidence distribution/i)).toBeInTheDocument()
+    expect(screen.getByText(/songs covered/i)).toBeInTheDocument()
+  })
+
   it('shows an empty-state message in rankings before any comparison', async () => {
     const user = userEvent.setup()
     renderApp()

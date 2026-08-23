@@ -12,13 +12,15 @@ import {
   type AlbumRow,
   type AlbumSort,
 } from './components/AlbumsView'
+import { StatsView } from './components/StatsView'
 import { albumColor } from './data/albumColors'
 import { fitBradleyTerry } from './engine/bradleyTerry'
 import { aggregateByGroup, type GroupMember } from './engine/aggregation'
+import { computeStats } from './engine/stats'
 import type { RankerRepository } from './data/repository'
 import type { Item } from './domain/types'
 
-type Tab = 'compare' | 'rankings' | 'albums'
+type Tab = 'compare' | 'rankings' | 'albums' | 'stats'
 
 const ALBUM_TOP_N = 3
 
@@ -152,6 +154,14 @@ function App({ repository }: AppProps = {}) {
     groupInfoById,
   ])
 
+  const stats = useMemo(() => {
+    if (tab !== 'stats') return null
+    return computeStats(
+      session.ranking.map((row) => row.rating),
+      session.totalComparisons,
+    )
+  }, [tab, session.ranking, session.totalComparisons])
+
   const comparisonLabel = `${session.totalComparisons} comparison${
     session.totalComparisons === 1 ? '' : 's'
   }`
@@ -205,6 +215,9 @@ function App({ repository }: AppProps = {}) {
           <TabButton active={tab === 'albums'} onClick={() => setTab('albums')}>
             Albums
           </TabButton>
+          <TabButton active={tab === 'stats'} onClick={() => setTab('stats')}>
+            Stats
+          </TabButton>
         </nav>
       </header>
 
@@ -229,7 +242,7 @@ function App({ repository }: AppProps = {}) {
           unrankedCount={definitive.unranked}
           totalComparisons={session.totalComparisons}
         />
-      ) : (
+      ) : tab === 'albums' ? (
         <AlbumsView
           mode={albumMode}
           onModeChange={setAlbumMode}
@@ -241,6 +254,8 @@ function App({ repository }: AppProps = {}) {
           albums={albums}
           totalComparisons={session.totalComparisons}
         />
+      ) : (
+        stats && <StatsView stats={stats} />
       )}
     </main>
   )
