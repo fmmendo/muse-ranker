@@ -14,7 +14,7 @@ import {
 } from './components/AlbumsView'
 import { StatsView } from './components/StatsView'
 import { albumColor } from './data/albumColors'
-import { fitBradleyTerry } from './engine/bradleyTerry'
+import { getModel } from './engine/model'
 import { aggregateByGroup, type GroupMember } from './engine/aggregation'
 import { computeStats } from './engine/stats'
 import type { RankerRepository } from './data/repository'
@@ -69,19 +69,20 @@ function App({ repository }: AppProps = {}) {
     if (rankMode !== 'definitive') {
       return { rows: [] as DefinitiveRow[], unranked: 0 }
     }
-    const fit = fitBradleyTerry(
+    const results = getModel('bradley-terry').rank(
       muse.items.map((i) => i.id),
       session.comparisons,
     )
-    const rated = fit.results
+    const rated = results
       .filter((r) => r.comparisonCount > 0)
       .sort((a, b) => b.score - a.score)
 
     const rows: DefinitiveRow[] = rated.map((r, idx) => {
       const item = session.itemsById.get(r.itemId)!
+      const interval = r.interval95 ?? 0
       const prev = idx > 0 ? rated[idx - 1] : null
       const tie = prev
-        ? prev.score - prev.interval95 <= r.score + r.interval95
+        ? prev.score - (prev.interval95 ?? 0) <= r.score + interval
         : false
       return {
         rank: idx + 1,
@@ -90,7 +91,7 @@ function App({ repository }: AppProps = {}) {
           ? (albumNameByGroupId.get(item.groupId) ?? '')
           : '',
         score: r.score,
-        interval: r.interval95,
+        interval,
         comparisonCount: r.comparisonCount,
         tie,
       }
@@ -102,28 +103,20 @@ function App({ repository }: AppProps = {}) {
   const albums = useMemo<AlbumRow[]>(() => {
     if (tab !== 'albums') return []
 
-    let members: GroupMember[]
-    if (albumMode === 'definitive') {
-      const fit = fitBradleyTerry(
-        muse.items.map((i) => i.id),
-        session.comparisons,
-      )
-      members = fit.results.map((r) => {
-        const item = session.itemsById.get(r.itemId)!
-        return {
-          groupId: item.groupId ?? '',
-          score: r.score,
-          interval95: r.interval95,
-          excluded: !includeBonus && item.metadata?.isBonus === true,
-        }
-      })
-    } else {
-      members = session.ranking.map((row) => ({
-        groupId: row.item.groupId ?? '',
-        score: row.rating.score,
-        excluded: !includeBonus && row.item.metadata?.isBonus === true,
-      }))
-    }
+    const model = albumMode === 'definitive' ? 'bradley-terry' : 'elo'
+    const results = getModel(model).rank(
+      muse.items.map((i) => i.id),
+      session.comparisons,
+    )
+    const members: GroupMember[] = results.map((r) => {
+      const item = session.itemsById.get(r.itemId)!
+      return {
+        groupId: item.groupId ?? '',
+        score: r.score,
+        interval95: r.interval95,
+        excluded: !includeBonus && item.metadata?.isBonus === true,
+      }
+    })
 
     const aggregates = aggregateByGroup(members, ALBUM_TOP_N)
     const rows = aggregates.map((g) => {
@@ -149,7 +142,6 @@ function App({ repository }: AppProps = {}) {
     albumSort,
     includeBonus,
     session.comparisons,
-    session.ranking,
     session.itemsById,
     groupInfoById,
   ])
