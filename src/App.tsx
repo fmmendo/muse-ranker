@@ -2,8 +2,13 @@ import { useMemo, useState } from 'react'
 import { muse } from './data/muse'
 import { useRankingSession } from './session/useRankingSession'
 import { CompareView } from './components/CompareView'
-import { RankingsView } from './components/RankingsView'
+import {
+  RankingsView,
+  type DefinitiveRow,
+  type RankingsMode,
+} from './components/RankingsView'
 import { albumColor } from './data/albumColors'
+import { fitBradleyTerry } from './engine/bradleyTerry'
 import type { RankerRepository } from './data/repository'
 import type { Item } from './domain/types'
 
@@ -17,6 +22,7 @@ interface AppProps {
 function App({ repository }: AppProps = {}) {
   const session = useRankingSession(muse, undefined, repository)
   const [tab, setTab] = useState<Tab>('compare')
+  const [rankMode, setRankMode] = useState<RankingsMode>('live')
 
   const albumNameByGroupId = useMemo(
     () => new Map(muse.groups.map((g) => [g.id, g.name])),
@@ -33,6 +39,40 @@ function App({ repository }: AppProps = {}) {
   }
 
   const albumColorOf = (item: Item): string => albumColor(albumNameOf(item))
+
+  // The Bradley-Terry fit is only computed when the definitive view is showing.
+  const definitive = useMemo(() => {
+    if (rankMode !== 'definitive') {
+      return { rows: [] as DefinitiveRow[], unranked: 0 }
+    }
+    const fit = fitBradleyTerry(
+      muse.items.map((i) => i.id),
+      session.comparisons,
+    )
+    const rated = fit.results
+      .filter((r) => r.comparisonCount > 0)
+      .sort((a, b) => b.score - a.score)
+
+    const rows: DefinitiveRow[] = rated.map((r, idx) => {
+      const item = session.itemsById.get(r.itemId)!
+      const prev = idx > 0 ? rated[idx - 1] : null
+      const tie = prev
+        ? prev.score - prev.interval95 <= r.score + r.interval95
+        : false
+      return {
+        rank: idx + 1,
+        item,
+        albumName: item.groupId
+          ? (albumNameByGroupId.get(item.groupId) ?? '')
+          : '',
+        score: r.score,
+        interval: r.interval95,
+        comparisonCount: r.comparisonCount,
+        tie,
+      }
+    })
+    return { rows, unranked: muse.items.length - rated.length }
+  }, [rankMode, session.comparisons, session.itemsById, albumNameByGroupId])
 
   const comparisonLabel = `${session.totalComparisons} comparison${
     session.totalComparisons === 1 ? '' : 's'
@@ -101,7 +141,11 @@ function App({ repository }: AppProps = {}) {
         />
       ) : (
         <RankingsView
-          ranking={session.ranking}
+          mode={rankMode}
+          onModeChange={setRankMode}
+          liveRanking={session.ranking}
+          definitiveRanking={definitive.rows}
+          unrankedCount={definitive.unranked}
           totalComparisons={session.totalComparisons}
         />
       )}

@@ -36,6 +36,8 @@ export interface RankingSession {
   ranking: RankedRow[]
   totalComparisons: number
   itemsById: Map<Id, Item>
+  /** The raw comparison log (for on-demand Bradley-Terry fitting). */
+  comparisons: readonly Comparison[]
 }
 
 /**
@@ -202,5 +204,6 @@ export function useRankingSession(
     ranking,
     totalComparisons: comparisons.length,
     itemsById,
+    comparisons,
   }
 }

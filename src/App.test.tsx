@@ -72,6 +72,22 @@ describe('App', () => {
     confirmSpy.mockRestore()
   })
 
+  it('shows the Bradley-Terry definitive ranking when toggled', async () => {
+    const user = userEvent.setup()
+    renderApp()
+
+    const choices = await screen.findAllByRole('button', { name: /^choose /i })
+    await user.click(choices[0])
+
+    await user.click(screen.getByRole('button', { name: /^rankings$/i }))
+    await user.click(screen.getByRole('button', { name: /bradley/i }))
+
+    expect(screen.getByText(/order-independent fit/i)).toBeInTheDocument()
+    expect(screen.getByRole('table')).toBeInTheDocument()
+    // exactly the two compared songs are rated; the rest are "not yet compared"
+    expect(screen.getByText(/not yet compared/i)).toBeInTheDocument()
+  })
+
   it('shows an empty-state message in rankings before any comparison', async () => {
     const user = userEvent.setup()
     renderApp()
