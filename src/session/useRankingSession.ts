@@ -1,14 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { BuiltCollection } from '../data/buildCollection'
-import type { Comparison, Id, Item, Rating } from '../domain/types'
-import {
-  DEFAULT_ELO_CONFIG,
-  initialRating,
-  recordComparison,
-  type EloConfig,
-} from '../engine/elo'
+import type { Comparison, Id, Item } from '../domain/types'
+import { DEFAULT_ELO_CONFIG, type EloConfig } from '../engine/elo'
 import { generateRanking, type RankedItem } from '../engine/ranking'
 import { randomPair } from '../engine/pairSelection'
+import { replayComparisons } from '../engine/replay'
 
 export interface RankedRow extends RankedItem {
   item: Item
@@ -22,6 +18,9 @@ export interface RankingSession {
   choose: (winnerId: Id, loserId: Id) => void
   /** Skip the current pair without recording a result. */
   skip: () => void
+  /** Undo the most recent choice and bring that pair back up. */
+  undo: () => void
+  canUndo: boolean
   /** Full leaderboard, best first, joined with item + album details. */
   ranking: RankedRow[]
   totalComparisons: number
@@ -29,10 +28,10 @@ export interface RankingSession {
 }
 
 /**
- * In-memory ranking session over a built collection. Holds ratings and
- * comparison history in React state and derives the live leaderboard. M5 will
- * swap the in-memory maps for a persistence-backed repository without changing
- * this hook's surface.
+ * In-memory ranking session over a built collection. Ratings are derived by
+ * replaying the comparison log, so state is always a pure function of that log —
+ * which makes undo (and later, load-from-storage) trivial and correct. M5 will
+ * back the comparison log with a repository without changing this surface.
  */
 export function useRankingSession(
   collection: BuiltCollection,
@@ -48,31 +47,24 @@ export function useRankingSession(
     () => new Map(collection.groups.map((g) => [g.id, g.name])),
     [collection.groups],
   )
-
-  const [ratings, setRatings] = useState<Map<Id, Rating>>(
-    () =>
-      new Map(
-        collection.items.map((i) => [i.id, initialRating(i.id, seedDate)]),
-      ),
+  const itemIds = useMemo(
+    () => collection.items.map((i) => i.id),
+    [collection.items],
   )
+
   const [comparisons, setComparisons] = useState<Comparison[]>([])
   const [pair, setPair] = useState<[Item, Item]>(() =>
     randomPair(collection.items),
   )
 
+  const ratings = useMemo(
+    () => replayComparisons(itemIds, comparisons, seedDate, config),
+    [itemIds, comparisons, seedDate, config],
+  )
+
   const choose = useCallback(
     (winnerId: Id, loserId: Id) => {
-      const timestamp = new Date().toISOString()
-      setRatings((prev) => {
-        const winner = prev.get(winnerId)
-        const loser = prev.get(loserId)
-        if (!winner || !loser) return prev
-        const outcome = recordComparison(winner, loser, timestamp, config)
-        const next = new Map(prev)
-        next.set(winnerId, outcome.winner)
-        next.set(loserId, outcome.loser)
-        return next
-      })
+      void loserId // loser is derived from the pair when replaying
       setComparisons((prev) => [
         ...prev,
         {
@@ -81,17 +73,26 @@ export function useRankingSession(
           itemAId: pair[0].id,
           itemBId: pair[1].id,
           winnerId,
-          timestamp,
+          timestamp: new Date().toISOString(),
         },
       ])
       setPair(randomPair(collection.items))
     },
-    [collection.collection.id, collection.items, config, pair],
+    [collection.collection.id, collection.items, pair],
   )
 
   const skip = useCallback(() => {
     setPair(randomPair(collection.items))
   }, [collection.items])
+
+  const undo = useCallback(() => {
+    if (comparisons.length === 0) return
+    const last = comparisons[comparisons.length - 1]
+    const a = itemsById.get(last.itemAId)
+    const b = itemsById.get(last.itemBId)
+    if (a && b) setPair([a, b]) // bring the undone pair back up to redo
+    setComparisons((prev) => prev.slice(0, -1))
+  }, [comparisons, itemsById])
 
   const ranking = useMemo<RankedRow[]>(() => {
     return generateRanking([...ratings.values()]).map((ranked) => {
@@ -110,6 +111,8 @@ export function useRankingSession(
     pair,
     choose,
     skip,
+    undo,
+    canUndo: comparisons.length > 0,
     ranking,
     totalComparisons: comparisons.length,
     itemsById,

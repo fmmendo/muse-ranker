@@ -3,6 +3,7 @@ import { muse } from './data/muse'
 import { useRankingSession } from './session/useRankingSession'
 import { CompareView } from './components/CompareView'
 import { RankingsView } from './components/RankingsView'
+import { albumColor } from './data/albumColors'
 import type { Item } from './domain/types'
 
 type Tab = 'compare' | 'rankings'
@@ -16,13 +17,16 @@ function App() {
     [],
   )
 
+  const albumNameOf = (item: Item): string =>
+    item.groupId ? (albumNameByGroupId.get(item.groupId) ?? '') : ''
+
   const albumLabel = (item: Item): string => {
-    const album = item.groupId
-      ? (albumNameByGroupId.get(item.groupId) ?? '')
-      : ''
+    const album = albumNameOf(item)
     const year = item.metadata?.year
     return year ? `${album} · ${year}` : album
   }
+
+  const albumColorOf = (item: Item): string => albumColor(albumNameOf(item))
 
   const comparisonLabel = `${session.totalComparisons} comparison${
     session.totalComparisons === 1 ? '' : 's'
@@ -61,7 +65,10 @@ function App() {
           pair={session.pair}
           onChoose={session.choose}
           onSkip={session.skip}
+          onUndo={session.undo}
+          canUndo={session.canUndo}
           albumLabel={albumLabel}
+          albumColor={albumColorOf}
         />
       ) : (
         <RankingsView

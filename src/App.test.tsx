@@ -29,6 +29,18 @@ describe('App', () => {
     expect(rows.length).toBeGreaterThan(2)
   })
 
+  it('undoes the last choice', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const choices = screen.getAllByRole('button', { name: /^choose /i })
+    await user.click(choices[0])
+    expect(screen.getByText(/·\s*1 comparison\b/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /undo last/i }))
+    expect(screen.getByText(/·\s*0 comparisons\b/i)).toBeInTheDocument()
+  })
+
   it('shows an empty-state message in rankings before any comparison', async () => {
     const user = userEvent.setup()
     render(<App />)

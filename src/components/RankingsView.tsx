@@ -1,3 +1,4 @@
+import { albumColor } from '../data/albumColors'
 import type { RankedRow } from '../session/useRankingSession'
 
 interface RankingsViewProps {
@@ -38,7 +39,13 @@ export function RankingsView({ ranking, totalComparisons }: RankingsViewProps) {
                 {item.name}
               </td>
               <td className="py-2 pr-2 text-slate-500 dark:text-slate-400">
-                {albumName}
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: albumColor(albumName) }}
+                  />
+                  {albumName}
+                </span>
               </td>
               <td className="py-2 pr-2 text-right tabular-nums text-slate-700 dark:text-slate-300">
                 {Math.round(rating.score)}
