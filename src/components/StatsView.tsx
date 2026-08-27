@@ -1,10 +1,12 @@
 import type { Stats } from '../engine/stats'
+import type { DatasetLabelSet } from './RankingsView'
 
 interface StatsViewProps {
   stats: Stats
+  labels: DatasetLabelSet
 }
 
-export function StatsView({ stats }: StatsViewProps) {
+export function StatsView({ stats, labels }: StatsViewProps) {
   if (stats.totalComparisons === 0) {
     return (
       <p className="text-center text-slate-500 dark:text-slate-400">
@@ -20,7 +22,7 @@ export function StatsView({ stats }: StatsViewProps) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Tile label="Comparisons" value={stats.totalComparisons.toString()} />
         <Tile
-          label="Songs covered"
+          label={`${labels.itemPlural} covered`}
           value={`${stats.songsCompared}/${stats.totalSongs}`}
           hint={pct(stats.coverage)}
         />
@@ -48,8 +50,9 @@ export function StatsView({ stats }: StatsViewProps) {
       </section>
 
       <p className="text-xs text-slate-400">
-        Convergence rises as low-confidence songs get surfaced for more
-        comparisons. “Est. remaining” assumes ~8 comparisons per song.
+        Convergence rises as low-confidence {labels.itemPlural.toLowerCase()}{' '}
+        get surfaced for more comparisons. “Est. remaining” assumes ~8
+        comparisons per {labels.item.toLowerCase()}.
       </p>
     </div>
   )

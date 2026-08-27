@@ -2,10 +2,11 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { InMemoryRepository } from './data/repository'
+import { testCollection } from './test/testCollection'
 
 const renderApp = (repository = new InMemoryRepository()) => ({
   repository,
-  ...render(<App repository={repository} />),
+  ...render(<App repository={repository} collection={testCollection} />),
 })
 
 describe('App', () => {
@@ -55,7 +56,7 @@ describe('App', () => {
     expect(screen.getByText(/·\s*1 comparison\b/i)).toBeInTheDocument()
     unmount()
 
-    render(<App repository={repository} />)
+    render(<App repository={repository} collection={testCollection} />)
     expect(await screen.findByText(/·\s*1 comparison\b/i)).toBeInTheDocument()
   })
 

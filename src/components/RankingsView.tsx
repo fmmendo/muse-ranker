@@ -1,13 +1,24 @@
-import { albumColor } from '../data/albumColors'
 import type { Item } from '../domain/types'
 import type { RankedRow } from '../session/useRankingSession'
 
 export type RankingsMode = 'live' | 'definitive'
 
+export interface DatasetLabelSet {
+  /** Singular item label, e.g. "Song". */
+  item: string
+  /** Singular group label, e.g. "Album". */
+  group: string
+  /** Plural item label, e.g. "Songs". */
+  itemPlural: string
+  /** Plural group label, e.g. "Albums". */
+  groupPlural: string
+}
+
 export interface DefinitiveRow {
   rank: number
   item: Item
-  albumName: string
+  groupName: string
+  groupColor: string
   score: number
   /** ± half-width of the 95% interval, in score points. */
   interval: number
@@ -23,6 +34,7 @@ interface RankingsViewProps {
   definitiveRanking: DefinitiveRow[]
   unrankedCount: number
   totalComparisons: number
+  labels: DatasetLabelSet
 }
 
 export function RankingsView({
@@ -32,6 +44,7 @@ export function RankingsView({
   definitiveRanking,
   unrankedCount,
   totalComparisons,
+  labels,
 }: RankingsViewProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -57,11 +70,12 @@ export function RankingsView({
           No comparisons yet — head to Compare and start picking.
         </p>
       ) : mode === 'live' ? (
-        <LiveTable ranking={liveRanking} />
+        <LiveTable ranking={liveRanking} labels={labels} />
       ) : (
         <DefinitiveTable
           ranking={definitiveRanking}
           unrankedCount={unrankedCount}
+          labels={labels}
         />
       )}
     </div>
@@ -94,22 +108,28 @@ function ModeButton({
   )
 }
 
-function LiveTable({ ranking }: { ranking: RankedRow[] }) {
+function LiveTable({
+  ranking,
+  labels,
+}: {
+  ranking: RankedRow[]
+  labels: DatasetLabelSet
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-slate-200 text-left text-slate-400 dark:border-slate-700">
             <th className="py-2 pr-2 font-medium">#</th>
-            <th className="py-2 pr-2 font-medium">Song</th>
-            <th className="py-2 pr-2 font-medium">Album</th>
+            <th className="py-2 pr-2 font-medium">{labels.item}</th>
+            <th className="py-2 pr-2 font-medium">{labels.group}</th>
             <th className="py-2 pr-2 text-right font-medium">Score</th>
             <th className="py-2 pr-2 text-right font-medium">W–L</th>
             <th className="py-2 pl-2 font-medium">Confidence</th>
           </tr>
         </thead>
         <tbody>
-          {ranking.map(({ rank, rating, item, albumName }) => (
+          {ranking.map(({ rank, rating, item, groupName, groupColor }) => (
             <tr
               key={rating.itemId}
               className="border-b border-slate-100 dark:border-slate-800"
@@ -119,7 +139,7 @@ function LiveTable({ ranking }: { ranking: RankedRow[] }) {
                 {item.name}
               </td>
               <td className="py-2 pr-2 text-slate-500 dark:text-slate-400">
-                <AlbumCell name={albumName} />
+                <GroupCell name={groupName} color={groupColor} />
               </td>
               <td className="py-2 pr-2 text-right tabular-nums text-slate-700 dark:text-slate-300">
                 {Math.round(rating.score)}
@@ -141,9 +161,11 @@ function LiveTable({ ranking }: { ranking: RankedRow[] }) {
 function DefinitiveTable({
   ranking,
   unrankedCount,
+  labels,
 }: {
   ranking: DefinitiveRow[]
   unrankedCount: number
+  labels: DatasetLabelSet
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -156,8 +178,8 @@ function DefinitiveTable({
           <thead>
             <tr className="border-b border-slate-200 text-left text-slate-400 dark:border-slate-700">
               <th className="py-2 pr-2 font-medium">#</th>
-              <th className="py-2 pr-2 font-medium">Song</th>
-              <th className="py-2 pr-2 font-medium">Album</th>
+              <th className="py-2 pr-2 font-medium">{labels.item}</th>
+              <th className="py-2 pr-2 font-medium">{labels.group}</th>
               <th className="py-2 pr-2 text-right font-medium">Score</th>
               <th className="py-2 pr-2 text-right font-medium">95% CI</th>
               <th className="py-2 pr-2 text-right font-medium">n</th>
@@ -182,7 +204,7 @@ function DefinitiveTable({
                   {row.item.name}
                 </td>
                 <td className="py-2 pr-2 text-slate-500 dark:text-slate-400">
-                  <AlbumCell name={row.albumName} />
+                  <GroupCell name={row.groupName} color={row.groupColor} />
                 </td>
                 <td className="py-2 pr-2 text-right tabular-nums text-slate-700 dark:text-slate-300">
                   {Math.round(row.score)}
@@ -200,19 +222,21 @@ function DefinitiveTable({
       </div>
       {unrankedCount > 0 && (
         <p className="text-center text-xs text-slate-400">
-          {unrankedCount} song{unrankedCount === 1 ? '' : 's'} not yet compared.
+          {unrankedCount}{' '}
+          {unrankedCount === 1 ? labels.item : labels.itemPlural} not yet
+          compared.
         </p>
       )}
     </div>
   )
 }
 
-function AlbumCell({ name }: { name: string }) {
+function GroupCell({ name, color }: { name: string; color: string }) {
   return (
     <span className="flex items-center gap-1.5">
       <span
         className="h-2 w-2 shrink-0 rounded-full"
-        style={{ backgroundColor: albumColor(name) }}
+        style={{ backgroundColor: color }}
       />
       {name}
     </span>

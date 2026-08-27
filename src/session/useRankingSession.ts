@@ -12,10 +12,12 @@ import { generateRanking, type RankedItem } from '../engine/ranking'
 import { randomPair, selectPair, pairKey } from '../engine/pairSelection'
 import { replayComparisons } from '../engine/replay'
 import { defaultRepository, type RankerRepository } from '../data/repository'
+import { colorFor } from '../data/colors'
 
 export interface RankedRow extends RankedItem {
   item: Item
-  albumName: string
+  groupName: string
+  groupColor: string
 }
 
 export interface RankingSession {
@@ -61,8 +63,8 @@ export function useRankingSession(
     () => new Map(collection.items.map((i) => [i.id, i])),
     [collection.items],
   )
-  const albumNameByGroupId = useMemo(
-    () => new Map(collection.groups.map((g) => [g.id, g.name])),
+  const groupById = useMemo(
+    () => new Map(collection.groups.map((g) => [g.id, g])),
     [collection.groups],
   )
   const itemIds = useMemo(
@@ -183,15 +185,15 @@ export function useRankingSession(
   const ranking = useMemo<RankedRow[]>(() => {
     return generateRanking([...ratings.values()]).map((ranked) => {
       const item = itemsById.get(ranked.rating.itemId)!
+      const group = item.groupId ? groupById.get(item.groupId) : undefined
       return {
         ...ranked,
         item,
-        albumName: item.groupId
-          ? (albumNameByGroupId.get(item.groupId) ?? '')
-          : '',
+        groupName: group?.name ?? '',
+        groupColor: group ? colorFor(group.name, group.color) : colorFor(''),
       }
     })
-  }, [ratings, itemsById, albumNameByGroupId])
+  }, [ratings, itemsById, groupById])
 
   return {
     pair,

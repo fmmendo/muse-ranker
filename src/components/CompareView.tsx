@@ -111,6 +111,18 @@ function ChoiceCard({
       <span className="absolute left-3 top-3 flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-xs text-slate-400 transition-colors group-hover:border-[var(--album)] group-hover:text-[var(--album)] dark:border-slate-700">
         {hint}
       </span>
+      {item.image ? (
+        <img
+          src={item.image}
+          alt=""
+          loading="lazy"
+          className="mb-1 h-28 w-28 rounded-lg object-cover"
+          onError={(e) => {
+            // Degrade gracefully if the image is missing/broken.
+            e.currentTarget.style.display = 'none'
+          }}
+        />
+      ) : null}
       <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">
         {item.name}
       </span>

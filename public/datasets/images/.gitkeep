@@ -1,0 +1,3 @@
+# Drop dataset images here (e.g. album covers: showbiz.jpg, absolution.jpg …).
+# Referenced from muse.json as "images/<name>.jpg"; cards fall back to
+# title-only until the files exist.

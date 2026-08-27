@@ -1,6 +1,5 @@
-import { albumColor } from '../data/albumColors'
 import type { Id } from '../domain/types'
-import type { RankingsMode } from './RankingsView'
+import type { DatasetLabelSet, RankingsMode } from './RankingsView'
 
 export type AlbumSort = 'mean' | 'topN'
 
@@ -8,6 +7,7 @@ export interface AlbumRow {
   rank: number
   groupId: Id
   name: string
+  color: string
   year?: number
   meanScore: number
   meanInterval?: number
@@ -21,11 +21,13 @@ interface AlbumsViewProps {
   onModeChange: (mode: RankingsMode) => void
   includeBonus: boolean
   onIncludeBonusChange: (value: boolean) => void
+  showBonusToggle: boolean
   sortBy: AlbumSort
   onSortChange: (sort: AlbumSort) => void
   topN: number
   albums: AlbumRow[]
   totalComparisons: number
+  labels: DatasetLabelSet
 }
 
 export function AlbumsView({
@@ -33,11 +35,13 @@ export function AlbumsView({
   onModeChange,
   includeBonus,
   onIncludeBonusChange,
+  showBonusToggle,
   sortBy,
   onSortChange,
   topN,
   albums,
   totalComparisons,
+  labels,
 }: AlbumsViewProps) {
   const definitive = mode === 'definitive'
 
@@ -60,25 +64,29 @@ export function AlbumsView({
           value={sortBy}
           onChange={(v) => onSortChange(v as AlbumSort)}
         />
-        <label className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-          <input
-            type="checkbox"
-            checked={includeBonus}
-            onChange={(e) => onIncludeBonusChange(e.target.checked)}
-            className="h-4 w-4 accent-indigo-500"
-          />
-          Include bonus tracks
-        </label>
+        {showBonusToggle && (
+          <label className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={includeBonus}
+              onChange={(e) => onIncludeBonusChange(e.target.checked)}
+              className="h-4 w-4 accent-indigo-500"
+            />
+            Include bonus {labels.itemPlural.toLowerCase()}
+          </label>
+        )}
       </div>
 
       {totalComparisons === 0 ? (
         <p className="text-center text-slate-500 dark:text-slate-400">
-          No comparisons yet — rank some songs and the albums will follow.
+          No comparisons yet — rank some {labels.itemPlural.toLowerCase()} and
+          the {labels.groupPlural.toLowerCase()} will follow.
         </p>
       ) : (
         <div className="flex flex-col gap-2">
           <p className="text-center text-xs text-slate-400">
-            Albums scored purely from their songs. <strong>Mean</strong> rewards
+            {labels.groupPlural} scored purely from their{' '}
+            {labels.itemPlural.toLowerCase()}. <strong>Mean</strong> rewards
             consistency; <strong>top {topN}</strong> rewards peaks.
           </p>
           <div className="overflow-x-auto">
@@ -86,10 +94,12 @@ export function AlbumsView({
               <thead>
                 <tr className="border-b border-slate-200 text-left text-slate-400 dark:border-slate-700">
                   <th className="py-2 pr-2 font-medium">#</th>
-                  <th className="py-2 pr-2 font-medium">Album</th>
+                  <th className="py-2 pr-2 font-medium">{labels.group}</th>
                   <Th active={sortBy === 'mean'}>Mean</Th>
                   <Th active={sortBy === 'topN'}>Top {topN}</Th>
-                  <th className="py-2 pl-2 text-right font-medium">Songs</th>
+                  <th className="py-2 pl-2 text-right font-medium">
+                    {labels.itemPlural}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -105,7 +115,7 @@ export function AlbumsView({
                       <span className="flex items-center gap-1.5">
                         <span
                           className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: albumColor(album.name) }}
+                          style={{ backgroundColor: album.color }}
                         />
                         {album.name}
                         {album.year ? (

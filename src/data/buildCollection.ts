@@ -7,11 +7,16 @@ import { collectionId, groupId, itemId } from '../domain/ids'
 
 export interface ItemSeed {
   name: string
+  description?: string
+  image?: string
   metadata?: Record<string, unknown>
 }
 
 export interface GroupSeed {
   name: string
+  description?: string
+  color?: string
+  image?: string
   metadata?: Record<string, unknown>
   items: ItemSeed[]
 }
@@ -19,6 +24,10 @@ export interface GroupSeed {
 export interface GroupedCollectionSeed {
   name: string
   description?: string
+  groupLabel?: string
+  groupLabelPlural?: string
+  itemLabel?: string
+  itemLabelPlural?: string
   createdDate?: IsoDate
   groups: GroupSeed[]
 }
@@ -35,7 +44,8 @@ const DEFAULT_SEED_DATE: IsoDate = '2026-08-23T00:00:00.000Z'
 /**
  * Expand a grouped seed into normalised entities with deterministic ids.
  * Throws on a duplicate item id, which surfaces accidental duplicate titles in
- * the source data rather than silently dropping one.
+ * the source data rather than silently dropping one. An item with no image
+ * inherits its group's image, so downstream code can read `item.image` directly.
  */
 export function buildCollection(seed: GroupedCollectionSeed): BuiltCollection {
   const date = seed.createdDate ?? DEFAULT_SEED_DATE
@@ -47,6 +57,10 @@ export function buildCollection(seed: GroupedCollectionSeed): BuiltCollection {
     description: seed.description,
     createdDate: date,
     updatedDate: date,
+    groupLabel: seed.groupLabel,
+    groupLabelPlural: seed.groupLabelPlural,
+    itemLabel: seed.itemLabel,
+    itemLabelPlural: seed.itemLabelPlural,
   }
 
   const groups: Group[] = []
@@ -59,6 +73,9 @@ export function buildCollection(seed: GroupedCollectionSeed): BuiltCollection {
       id: gId,
       collectionId: cId,
       name: group.name,
+      description: group.description,
+      color: group.color,
+      image: group.image,
       metadata: group.metadata,
     })
 
@@ -75,6 +92,8 @@ export function buildCollection(seed: GroupedCollectionSeed): BuiltCollection {
         collectionId: cId,
         groupId: gId,
         name: item.name,
+        description: item.description,
+        image: item.image ?? group.image,
         metadata: item.metadata,
       })
     }

@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
-import { muse } from './data/muse'
+import { useEffect, useMemo, useState } from 'react'
 import { useRankingSession } from './session/useRankingSession'
 import { CompareView } from './components/CompareView'
 import {
   RankingsView,
+  type DatasetLabelSet,
   type DefinitiveRow,
   type RankingsMode,
 } from './components/RankingsView'
@@ -13,12 +13,14 @@ import {
   type AlbumSort,
 } from './components/AlbumsView'
 import { StatsView } from './components/StatsView'
-import { albumColor } from './data/albumColors'
+import { colorFor } from './data/colors'
 import { getModel } from './engine/model'
 import { aggregateByGroup, type GroupMember } from './engine/aggregation'
 import { computeStats } from './engine/stats'
+import { loadCollection } from './data/loadCollection'
+import type { BuiltCollection } from './data/buildCollection'
 import type { RankerRepository } from './data/repository'
-import type { Item } from './domain/types'
+import type { Group, Item } from './domain/types'
 
 type Tab = 'compare' | 'rankings' | 'albums' | 'stats'
 
@@ -27,85 +29,150 @@ const ALBUM_TOP_N = 3
 interface AppProps {
   /** Injectable for tests/previews; defaults to the Dexie-backed repository. */
   repository?: RankerRepository
+  /** Injectable collection; when omitted it is fetched from the dataset URL. */
+  collection?: BuiltCollection
 }
 
-function App({ repository }: AppProps = {}) {
-  const session = useRankingSession(muse, undefined, repository)
+/** Loads the dataset (unless injected), then renders the app. */
+function App({ repository, collection: injected }: AppProps = {}) {
+  const [collection, setCollection] = useState<BuiltCollection | null>(
+    injected ?? null,
+  )
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (injected) return
+    let cancelled = false
+    loadCollection()
+      .then((c) => {
+        if (!cancelled) setCollection(c)
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [injected])
+
+  if (error) {
+    return (
+      <main className="mx-auto flex min-h-svh max-w-2xl flex-col items-center justify-center gap-2 px-6 text-center text-slate-900 dark:text-slate-100">
+        <h1 className="text-xl font-semibold">Couldn’t load the dataset</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{error}</p>
+      </main>
+    )
+  }
+  if (!collection) {
+    return (
+      <main className="mx-auto flex min-h-svh max-w-2xl items-center justify-center px-6 text-slate-400">
+        Loading…
+      </main>
+    )
+  }
+  return <RankerApp collection={collection} repository={repository} />
+}
+
+function RankerApp({
+  collection,
+  repository,
+}: {
+  collection: BuiltCollection
+  repository?: RankerRepository
+}) {
+  const session = useRankingSession(collection, undefined, repository)
   const [tab, setTab] = useState<Tab>('compare')
   const [rankMode, setRankMode] = useState<RankingsMode>('live')
   const [albumMode, setAlbumMode] = useState<RankingsMode>('live')
   const [albumSort, setAlbumSort] = useState<AlbumSort>('mean')
   const [includeBonus, setIncludeBonus] = useState(false)
 
-  const albumNameByGroupId = useMemo(
-    () => new Map(muse.groups.map((g) => [g.id, g.name])),
-    [],
+  const groupById = useMemo(
+    () => new Map(collection.groups.map((g) => [g.id, g])),
+    [collection.groups],
   )
 
-  const groupInfoById = useMemo(
-    () =>
-      new Map(
-        muse.groups.map((g) => [
-          g.id,
-          { name: g.name, year: g.metadata?.year as number | undefined },
-        ]),
-      ),
-    [],
+  const meta = collection.collection
+  const labels: DatasetLabelSet = useMemo(() => {
+    const plural = (singular: string | undefined, fallback: string) =>
+      singular ? `${singular}s` : fallback
+    return {
+      group: meta.groupLabel ?? 'Group',
+      groupPlural: meta.groupLabelPlural ?? plural(meta.groupLabel, 'Groups'),
+      item: meta.itemLabel ?? 'Item',
+      itemPlural: meta.itemLabelPlural ?? plural(meta.itemLabel, 'Items'),
+    }
+  }, [meta])
+
+  const hasBonus = useMemo(
+    () => collection.items.some((i) => i.metadata?.isBonus === true),
+    [collection.items],
   )
 
-  const albumNameOf = (item: Item): string =>
-    item.groupId ? (albumNameByGroupId.get(item.groupId) ?? '') : ''
+  const groupOf = (item: Item): Group | undefined =>
+    item.groupId ? groupById.get(item.groupId) : undefined
 
-  const albumLabel = (item: Item): string => {
-    const album = albumNameOf(item)
-    const year = item.metadata?.year
-    return year ? `${album} · ${year}` : album
+  const compareLabel = (item: Item): string => {
+    const group = groupOf(item)
+    if (!group) return ''
+    const year = group.metadata?.year
+    return year ? `${group.name} · ${year}` : group.name
   }
 
-  const albumColorOf = (item: Item): string => albumColor(albumNameOf(item))
+  const colorOf = (item: Item): string => {
+    const group = groupOf(item)
+    return group ? colorFor(group.name, group.color) : colorFor('')
+  }
 
-  // The Bradley-Terry fit is only computed when the definitive view is showing.
+  // Bradley-Terry definitive ranking (only while the definitive view shows).
   const definitive = useMemo(() => {
     if (rankMode !== 'definitive') {
       return { rows: [] as DefinitiveRow[], unranked: 0 }
     }
-    const results = getModel('bradley-terry').rank(
-      muse.items.map((i) => i.id),
-      session.comparisons,
-    )
-    const rated = results
+    const results = getModel('bradley-terry')
+      .rank(
+        collection.items.map((i) => i.id),
+        session.comparisons,
+      )
       .filter((r) => r.comparisonCount > 0)
       .sort((a, b) => b.score - a.score)
 
-    const rows: DefinitiveRow[] = rated.map((r, idx) => {
+    const rows: DefinitiveRow[] = results.map((r, idx) => {
       const item = session.itemsById.get(r.itemId)!
+      const group = groupOf(item)
       const interval = r.interval95 ?? 0
-      const prev = idx > 0 ? rated[idx - 1] : null
+      const prev = idx > 0 ? results[idx - 1] : null
       const tie = prev
         ? prev.score - (prev.interval95 ?? 0) <= r.score + interval
         : false
       return {
         rank: idx + 1,
         item,
-        albumName: item.groupId
-          ? (albumNameByGroupId.get(item.groupId) ?? '')
-          : '',
+        groupName: group?.name ?? '',
+        groupColor: group ? colorFor(group.name, group.color) : colorFor(''),
         score: r.score,
         interval,
         comparisonCount: r.comparisonCount,
         tie,
       }
     })
-    return { rows, unranked: muse.items.length - rated.length }
-  }, [rankMode, session.comparisons, session.itemsById, albumNameByGroupId])
+    return { rows, unranked: collection.items.length - results.length }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    rankMode,
+    collection.items,
+    session.comparisons,
+    session.itemsById,
+    groupById,
+  ])
 
-  // Album aggregation (only computed while the Albums tab is showing).
+  // Album/group aggregation (only while the Albums tab shows).
   const albums = useMemo<AlbumRow[]>(() => {
     if (tab !== 'albums') return []
 
     const model = albumMode === 'definitive' ? 'bradley-terry' : 'elo'
     const results = getModel(model).rank(
-      muse.items.map((i) => i.id),
+      collection.items.map((i) => i.id),
       session.comparisons,
     )
     const members: GroupMember[] = results.map((r) => {
@@ -118,13 +185,13 @@ function App({ repository }: AppProps = {}) {
       }
     })
 
-    const aggregates = aggregateByGroup(members, ALBUM_TOP_N)
-    const rows = aggregates.map((g) => {
-      const info = groupInfoById.get(g.groupId)
+    const rows = aggregateByGroup(members, ALBUM_TOP_N).map((g) => {
+      const group = groupById.get(g.groupId)
       return {
         groupId: g.groupId,
-        name: info?.name ?? '',
-        year: info?.year,
+        name: group?.name ?? '',
+        color: group ? colorFor(group.name, group.color) : colorFor(''),
+        year: group?.metadata?.year as number | undefined,
         meanScore: g.mean.score,
         meanInterval: g.mean.interval95,
         topNScore: g.topN.score,
@@ -141,9 +208,10 @@ function App({ repository }: AppProps = {}) {
     albumMode,
     albumSort,
     includeBonus,
+    collection.items,
     session.comparisons,
     session.itemsById,
-    groupInfoById,
+    groupById,
   ])
 
   const stats = useMemo(() => {
@@ -161,7 +229,7 @@ function App({ repository }: AppProps = {}) {
   const handleReset = () => {
     if (
       window.confirm(
-        `Clear all ${session.totalComparisons} comparisons for ${muse.collection.name}? This cannot be undone.`,
+        `Clear all ${session.totalComparisons} comparisons for ${meta.name}? This cannot be undone.`,
       )
     ) {
       session.reset()
@@ -177,7 +245,7 @@ function App({ repository }: AppProps = {}) {
           </h1>
           <span className="flex items-center gap-3 text-sm text-slate-400">
             <span>
-              {muse.collection.name} · {comparisonLabel}
+              {meta.name} · {comparisonLabel}
             </span>
             {session.totalComparisons > 0 && (
               <button
@@ -205,7 +273,7 @@ function App({ repository }: AppProps = {}) {
             Rankings
           </TabButton>
           <TabButton active={tab === 'albums'} onClick={() => setTab('albums')}>
-            Albums
+            {labels.groupPlural}
           </TabButton>
           <TabButton active={tab === 'stats'} onClick={() => setTab('stats')}>
             Stats
@@ -222,8 +290,8 @@ function App({ repository }: AppProps = {}) {
           onSkip={session.skip}
           onUndo={session.undo}
           canUndo={session.canUndo}
-          albumLabel={albumLabel}
-          albumColor={albumColorOf}
+          albumLabel={compareLabel}
+          albumColor={colorOf}
         />
       ) : tab === 'rankings' ? (
         <RankingsView
@@ -233,6 +301,7 @@ function App({ repository }: AppProps = {}) {
           definitiveRanking={definitive.rows}
           unrankedCount={definitive.unranked}
           totalComparisons={session.totalComparisons}
+          labels={labels}
         />
       ) : tab === 'albums' ? (
         <AlbumsView
@@ -240,14 +309,16 @@ function App({ repository }: AppProps = {}) {
           onModeChange={setAlbumMode}
           includeBonus={includeBonus}
           onIncludeBonusChange={setIncludeBonus}
+          showBonusToggle={hasBonus}
           sortBy={albumSort}
           onSortChange={setAlbumSort}
           topN={ALBUM_TOP_N}
           albums={albums}
           totalComparisons={session.totalComparisons}
+          labels={labels}
         />
       ) : (
-        stats && <StatsView stats={stats} />
+        stats && <StatsView stats={stats} labels={labels} />
       )}
     </main>
   )

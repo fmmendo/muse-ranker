@@ -14,6 +14,12 @@ export interface Collection {
   description?: string
   createdDate: IsoDate
   updatedDate: IsoDate
+  /** What a group is called in this collection, e.g. "Album" / "Albums". */
+  groupLabel?: string
+  groupLabelPlural?: string
+  /** What an item is called, e.g. "Song" / "Songs". */
+  itemLabel?: string
+  itemLabelPlural?: string
 }
 
 /** An optional logical grouping of items within a collection, e.g. an album. */
@@ -21,6 +27,11 @@ export interface Group {
   id: Id
   collectionId: Id
   name: string
+  description?: string
+  /** Accent colour (hex). Falls back to a hashed hue when absent. */
+  color?: string
+  /** Image URI (resolved absolute at load time). */
+  image?: string
   metadata?: Record<string, unknown>
 }
 
@@ -30,6 +41,9 @@ export interface Item {
   collectionId: Id
   groupId?: Id
   name: string
+  description?: string
+  /** Image URI (resolved absolute at load time); falls back to its group's. */
+  image?: string
   metadata?: Record<string, unknown>
 }
 
