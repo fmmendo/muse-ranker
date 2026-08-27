@@ -49,7 +49,7 @@ export function StatsView({ stats, labels }: StatsViewProps) {
         />
       </section>
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Convergence rises as low-confidence {labels.itemPlural.toLowerCase()}{' '}
         get surfaced for more comparisons. “Est. remaining” assumes ~8
         comparisons per {labels.item.toLowerCase()}.
@@ -69,11 +69,13 @@ function Tile({
 }) {
   return (
     <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-      <div className="text-xs text-slate-400">{label}</div>
+      <div className="text-xs text-slate-500 dark:text-slate-400">{label}</div>
       <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">
         {value}
       </div>
-      {hint ? <div className="text-xs text-slate-400">{hint}</div> : null}
+      {hint ? (
+        <div className="text-xs text-slate-500 dark:text-slate-400">{hint}</div>
+      ) : null}
     </div>
   )
 }
@@ -90,7 +92,7 @@ function ConfidenceHistogram({
     <div className="flex flex-col gap-1.5">
       {buckets.map((b) => (
         <div key={b.label} className="flex items-center gap-2 text-xs">
-          <span className="w-16 shrink-0 text-right text-slate-400">
+          <span className="w-16 shrink-0 text-right text-slate-500 dark:text-slate-400">
             {b.label}
           </span>
           <div className="h-4 flex-1 overflow-hidden rounded bg-slate-100 dark:bg-slate-800">

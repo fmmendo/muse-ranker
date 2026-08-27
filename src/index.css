@@ -1,1 +1,21 @@
 @import 'tailwindcss';
+
+/* Drive the `dark:` variant from a `.dark` class on <html> (toggled in JS),
+   rather than only prefers-color-scheme, so the theme toggle works. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #ffffff; /* white */
+  color: #0f172a; /* slate-900 */
+}
+html.dark body {
+  background-color: #020617; /* slate-950 */
+  color: #f1f5f9; /* slate-100 */
+}

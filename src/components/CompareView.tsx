@@ -68,7 +68,7 @@ export function CompareView({
         <button
           type="button"
           onClick={onSkip}
-          className="text-slate-400 underline-offset-4 transition hover:text-slate-600 hover:underline active:text-slate-800 dark:hover:text-slate-300"
+          className="text-slate-500 dark:text-slate-400 underline-offset-4 transition hover:text-slate-600 hover:underline active:text-slate-800 dark:hover:text-slate-300"
         >
           Skip (space)
         </button>
@@ -76,7 +76,7 @@ export function CompareView({
           type="button"
           onClick={onUndo}
           disabled={!canUndo}
-          className="text-slate-400 underline-offset-4 transition hover:text-slate-600 hover:underline active:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:no-underline dark:hover:text-slate-300"
+          className="text-slate-500 dark:text-slate-400 underline-offset-4 transition hover:text-slate-600 hover:underline active:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:no-underline dark:hover:text-slate-300"
         >
           Undo last (u)
         </button>
@@ -108,7 +108,7 @@ function ChoiceCard({
       style={{ '--album': accent } as CSSProperties}
       className="group relative flex min-h-40 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white p-6 text-center transition duration-150 hover:-translate-y-0.5 hover:border-[var(--album)] hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:shadow-sm focus-visible:border-[var(--album)] focus-visible:outline-none dark:border-slate-700 dark:bg-slate-900"
     >
-      <span className="absolute left-3 top-3 flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-xs text-slate-400 transition-colors group-hover:border-[var(--album)] group-hover:text-[var(--album)] dark:border-slate-700">
+      <span className="absolute left-3 top-3 flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-xs text-slate-500 dark:text-slate-400 transition-colors group-hover:border-[var(--album)] group-hover:text-[var(--album)] dark:border-slate-700">
         {hint}
       </span>
       {item.image ? (

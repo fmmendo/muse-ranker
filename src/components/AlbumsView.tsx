@@ -1,7 +1,17 @@
+import { Fragment, useState } from 'react'
 import type { Id } from '../domain/types'
 import type { DatasetLabelSet, RankingsMode } from './RankingsView'
 
 export type AlbumSort = 'mean' | 'topN'
+
+export interface AlbumTrack {
+  rank: number
+  itemId: Id
+  name: string
+  score: number
+  isBonus: boolean
+  comparisonCount: number
+}
 
 export interface AlbumRow {
   rank: number
@@ -26,6 +36,7 @@ interface AlbumsViewProps {
   onSortChange: (sort: AlbumSort) => void
   topN: number
   albums: AlbumRow[]
+  tracksByGroup: Map<Id, AlbumTrack[]>
   totalComparisons: number
   labels: DatasetLabelSet
 }
@@ -40,10 +51,12 @@ export function AlbumsView({
   onSortChange,
   topN,
   albums,
+  tracksByGroup,
   totalComparisons,
   labels,
 }: AlbumsViewProps) {
   const definitive = mode === 'definitive'
+  const [expanded, setExpanded] = useState<Id | null>(null)
 
   return (
     <div className="flex flex-col gap-4">
@@ -84,15 +97,17 @@ export function AlbumsView({
         </p>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-center text-xs text-slate-400">
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400">
             {labels.groupPlural} scored purely from their{' '}
             {labels.itemPlural.toLowerCase()}. <strong>Mean</strong> rewards
-            consistency; <strong>top {topN}</strong> rewards peaks.
+            consistency; <strong>top {topN}</strong> rewards peaks. Click a{' '}
+            {labels.group.toLowerCase()} to see its ranked{' '}
+            {labels.itemPlural.toLowerCase()}.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-slate-400 dark:border-slate-700">
+                <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
                   <th className="py-2 pr-2 font-medium">#</th>
                   <th className="py-2 pr-2 font-medium">{labels.group}</th>
                   <Th active={sortBy === 'mean'}>Mean</Th>
@@ -103,47 +118,108 @@ export function AlbumsView({
                 </tr>
               </thead>
               <tbody>
-                {albums.map((album) => (
-                  <tr
-                    key={album.groupId}
-                    className="border-b border-slate-100 dark:border-slate-800"
-                  >
-                    <td className="py-2 pr-2 tabular-nums text-slate-400">
-                      {album.rank}
-                    </td>
-                    <td className="py-2 pr-2 font-medium text-slate-900 dark:text-slate-100">
-                      <span className="flex items-center gap-1.5">
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: album.color }}
+                {albums.map((album) => {
+                  const isOpen = expanded === album.groupId
+                  return (
+                    <Fragment key={album.groupId}>
+                      <tr
+                        onClick={() =>
+                          setExpanded(isOpen ? null : album.groupId)
+                        }
+                        aria-expanded={isOpen}
+                        className="cursor-pointer border-b border-slate-100 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50"
+                      >
+                        <td className="py-2 pr-2 tabular-nums text-slate-500 dark:text-slate-400">
+                          {album.rank}
+                        </td>
+                        <td className="py-2 pr-2 font-medium text-slate-900 dark:text-slate-100">
+                          <span className="flex items-center gap-1.5">
+                            <span className="text-slate-400">
+                              {isOpen ? '▾' : '▸'}
+                            </span>
+                            <span
+                              className="h-2.5 w-2.5 shrink-0 rounded-full"
+                              style={{ backgroundColor: album.color }}
+                            />
+                            {album.name}
+                            {album.year ? (
+                              <span className="text-slate-500 dark:text-slate-400">
+                                ({album.year})
+                              </span>
+                            ) : null}
+                          </span>
+                        </td>
+                        <ScoreCell
+                          score={album.meanScore}
+                          interval={definitive ? album.meanInterval : undefined}
+                          emphasised={sortBy === 'mean'}
                         />
-                        {album.name}
-                        {album.year ? (
-                          <span className="text-slate-400">({album.year})</span>
-                        ) : null}
-                      </span>
-                    </td>
-                    <ScoreCell
-                      score={album.meanScore}
-                      interval={definitive ? album.meanInterval : undefined}
-                      emphasised={sortBy === 'mean'}
-                    />
-                    <ScoreCell
-                      score={album.topNScore}
-                      interval={definitive ? album.topNInterval : undefined}
-                      emphasised={sortBy === 'topN'}
-                    />
-                    <td className="py-2 pl-2 text-right tabular-nums text-slate-400">
-                      {album.songCount}
-                    </td>
-                  </tr>
-                ))}
+                        <ScoreCell
+                          score={album.topNScore}
+                          interval={definitive ? album.topNInterval : undefined}
+                          emphasised={sortBy === 'topN'}
+                        />
+                        <td className="py-2 pl-2 text-right tabular-nums text-slate-500 dark:text-slate-400">
+                          {album.songCount}
+                        </td>
+                      </tr>
+                      {isOpen && (
+                        <tr className="border-b border-slate-100 dark:border-slate-800">
+                          <td
+                            colSpan={5}
+                            className="bg-slate-50 dark:bg-slate-900/40"
+                          >
+                            <TrackList
+                              tracks={tracksByGroup.get(album.groupId) ?? []}
+                              color={album.color}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+function TrackList({ tracks, color }: { tracks: AlbumTrack[]; color: string }) {
+  return (
+    <ol className="flex flex-col gap-0.5 py-2 pl-8 pr-3">
+      {tracks.map((track) => (
+        <li
+          key={track.itemId}
+          className="flex items-center gap-2 py-0.5 text-sm"
+        >
+          <span className="w-5 shrink-0 text-right tabular-nums text-slate-500 dark:text-slate-400">
+            {track.rank}
+          </span>
+          <span
+            className="h-1.5 w-1.5 shrink-0 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+          <span className="text-slate-800 dark:text-slate-200">
+            {track.name}
+          </span>
+          {track.isBonus ? (
+            <span className="rounded bg-slate-200 px-1 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+              bonus
+            </span>
+          ) : null}
+          {track.comparisonCount === 0 ? (
+            <span className="text-xs text-slate-400">· unranked</span>
+          ) : null}
+          <span className="ml-auto tabular-nums text-slate-500 dark:text-slate-400">
+            {Math.round(track.score)}
+          </span>
+        </li>
+      ))}
+    </ol>
   )
 }
 
@@ -186,7 +262,7 @@ function ScoreCell({
     >
       {Math.round(score)}
       {interval !== undefined ? (
-        <span className="ml-1 font-normal text-slate-400">
+        <span className="ml-1 font-normal text-slate-500 dark:text-slate-400">
           ±{Math.round(interval)}
         </span>
       ) : null}

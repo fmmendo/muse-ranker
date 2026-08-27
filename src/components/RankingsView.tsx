@@ -119,7 +119,7 @@ function LiveTable({
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b border-slate-200 text-left text-slate-400 dark:border-slate-700">
+          <tr className="border-b border-slate-200 text-left text-slate-500 dark:text-slate-400 dark:border-slate-700">
             <th className="py-2 pr-2 font-medium">#</th>
             <th className="py-2 pr-2 font-medium">{labels.item}</th>
             <th className="py-2 pr-2 font-medium">{labels.group}</th>
@@ -134,7 +134,9 @@ function LiveTable({
               key={rating.itemId}
               className="border-b border-slate-100 dark:border-slate-800"
             >
-              <td className="py-2 pr-2 tabular-nums text-slate-400">{rank}</td>
+              <td className="py-2 pr-2 tabular-nums text-slate-500 dark:text-slate-400">
+                {rank}
+              </td>
               <td className="py-2 pr-2 font-medium text-slate-900 dark:text-slate-100">
                 {item.name}
               </td>
@@ -169,14 +171,14 @@ function DefinitiveTable({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-center text-xs text-slate-400">
+      <p className="text-center text-xs text-slate-500 dark:text-slate-400">
         Order-independent fit over all comparisons. ± is the 95% interval;
         overlapping intervals (≈) mean a statistical tie.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-400 dark:border-slate-700">
+            <tr className="border-b border-slate-200 text-left text-slate-500 dark:text-slate-400 dark:border-slate-700">
               <th className="py-2 pr-2 font-medium">#</th>
               <th className="py-2 pr-2 font-medium">{labels.item}</th>
               <th className="py-2 pr-2 font-medium">{labels.group}</th>
@@ -191,7 +193,7 @@ function DefinitiveTable({
                 key={row.item.id}
                 className="border-b border-slate-100 dark:border-slate-800"
               >
-                <td className="py-2 pr-2 tabular-nums text-slate-400">
+                <td className="py-2 pr-2 tabular-nums text-slate-500 dark:text-slate-400">
                   {row.tie ? (
                     <span title="Statistical tie with the item above">
                       ≈{row.rank}
@@ -209,10 +211,10 @@ function DefinitiveTable({
                 <td className="py-2 pr-2 text-right tabular-nums text-slate-700 dark:text-slate-300">
                   {Math.round(row.score)}
                 </td>
-                <td className="py-2 pr-2 text-right tabular-nums text-slate-400">
+                <td className="py-2 pr-2 text-right tabular-nums text-slate-500 dark:text-slate-400">
                   ±{Math.round(row.interval)}
                 </td>
-                <td className="py-2 pr-2 text-right tabular-nums text-slate-400">
+                <td className="py-2 pr-2 text-right tabular-nums text-slate-500 dark:text-slate-400">
                   {row.comparisonCount}
                 </td>
               </tr>
@@ -221,7 +223,7 @@ function DefinitiveTable({
         </table>
       </div>
       {unrankedCount > 0 && (
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs text-slate-500 dark:text-slate-400">
           {unrankedCount}{' '}
           {unrankedCount === 1 ? labels.item : labels.itemPlural} not yet
           compared.

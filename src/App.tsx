@@ -11,8 +11,11 @@ import {
   AlbumsView,
   type AlbumRow,
   type AlbumSort,
+  type AlbumTrack,
 } from './components/AlbumsView'
 import { StatsView } from './components/StatsView'
+import { ThemeToggle } from './components/ThemeToggle'
+import { useTheme } from './session/useTheme'
 import { colorFor } from './data/colors'
 import { getModel } from './engine/model'
 import { aggregateByGroup, type GroupMember } from './engine/aggregation'
@@ -65,7 +68,7 @@ function App({ repository, collection: injected }: AppProps = {}) {
   }
   if (!collection) {
     return (
-      <main className="mx-auto flex min-h-svh max-w-2xl items-center justify-center px-6 text-slate-400">
+      <main className="mx-auto flex min-h-svh max-w-2xl items-center justify-center px-6 text-slate-500 dark:text-slate-400">
         Loading…
       </main>
     )
@@ -81,6 +84,7 @@ function RankerApp({
   repository?: RankerRepository
 }) {
   const session = useRankingSession(collection, undefined, repository)
+  const { theme, cycle } = useTheme()
   const [tab, setTab] = useState<Tab>('compare')
   const [rankMode, setRankMode] = useState<RankingsMode>('live')
   const [albumMode, setAlbumMode] = useState<RankingsMode>('live')
@@ -166,24 +170,52 @@ function RankerApp({
     groupById,
   ])
 
-  // Album/group aggregation (only while the Albums tab shows).
-  const albums = useMemo<AlbumRow[]>(() => {
-    if (tab !== 'albums') return []
+  // Album/group aggregation + per-group ranked tracks (only on the Albums tab).
+  const albums = useMemo(() => {
+    const empty = {
+      rows: [] as AlbumRow[],
+      tracksByGroup: new Map<string, AlbumTrack[]>(),
+    }
+    if (tab !== 'albums') return empty
 
     const model = albumMode === 'definitive' ? 'bradley-terry' : 'elo'
     const results = getModel(model).rank(
       collection.items.map((i) => i.id),
       session.comparisons,
     )
-    const members: GroupMember[] = results.map((r) => {
+
+    const members: GroupMember[] = []
+    const trackLists = new Map<string, AlbumTrack[]>()
+    for (const r of results) {
       const item = session.itemsById.get(r.itemId)!
-      return {
-        groupId: item.groupId ?? '',
+      const gid = item.groupId ?? ''
+      const isBonus = item.metadata?.isBonus === true
+      members.push({
+        groupId: gid,
         score: r.score,
         interval95: r.interval95,
-        excluded: !includeBonus && item.metadata?.isBonus === true,
-      }
-    })
+        excluded: !includeBonus && isBonus,
+      })
+      const list = trackLists.get(gid) ?? []
+      list.push({
+        rank: 0,
+        itemId: r.itemId,
+        name: item.name,
+        score: r.score,
+        isBonus,
+        comparisonCount: r.comparisonCount,
+      })
+      trackLists.set(gid, list)
+    }
+
+    const tracksByGroup = new Map<string, AlbumTrack[]>()
+    for (const [gid, list] of trackLists) {
+      list.sort((a, b) => b.score - a.score)
+      tracksByGroup.set(
+        gid,
+        list.map((t, i) => ({ ...t, rank: i + 1 })),
+      )
+    }
 
     const rows = aggregateByGroup(members, ALBUM_TOP_N).map((g) => {
       const group = groupById.get(g.groupId)
@@ -202,7 +234,10 @@ function RankerApp({
 
     const key = albumSort === 'mean' ? 'meanScore' : 'topNScore'
     rows.sort((a, b) => b[key] - a[key])
-    return rows.map((r, i) => ({ ...r, rank: i + 1 }))
+    return {
+      rows: rows.map((r, i) => ({ ...r, rank: i + 1 })),
+      tracksByGroup,
+    }
   }, [
     tab,
     albumMode,
@@ -243,7 +278,7 @@ function RankerApp({
           <h1 className="text-2xl font-semibold tracking-tight">
             Preference Ranker
           </h1>
-          <span className="flex items-center gap-3 text-sm text-slate-400">
+          <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
             <span>
               {meta.name} · {comparisonLabel}
             </span>
@@ -256,7 +291,8 @@ function RankerApp({
                 Reset
               </button>
             )}
-          </span>
+            <ThemeToggle theme={theme} onCycle={cycle} />
+          </div>
         </div>
 
         <nav className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
@@ -282,7 +318,9 @@ function RankerApp({
       </header>
 
       {!session.loaded ? (
-        <p className="text-center text-slate-400">Loading…</p>
+        <p className="text-center text-slate-500 dark:text-slate-400">
+          Loading…
+        </p>
       ) : tab === 'compare' ? (
         <CompareView
           pair={session.pair}
@@ -313,7 +351,8 @@ function RankerApp({
           sortBy={albumSort}
           onSortChange={setAlbumSort}
           topN={ALBUM_TOP_N}
-          albums={albums}
+          albums={albums.rows}
+          tracksByGroup={albums.tracksByGroup}
           totalComparisons={session.totalComparisons}
           labels={labels}
         />
