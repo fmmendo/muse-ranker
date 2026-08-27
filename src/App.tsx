@@ -83,8 +83,17 @@ function RankerApp({
   collection: BuiltCollection
   repository?: RankerRepository
 }) {
-  const session = useRankingSession(collection, undefined, repository)
+  const session = useRankingSession(collection, repository)
   const { theme, cycle } = useTheme()
+
+  // Elo config for model calls, so Albums "live" scores match the session's.
+  const eloConfig = useMemo(
+    () => ({
+      kFactor: collection.config.eloKFactor,
+      initialRating: 1000,
+    }),
+    [collection.config.eloKFactor],
+  )
   const [tab, setTab] = useState<Tab>('compare')
   const [rankMode, setRankMode] = useState<RankingsMode>('live')
   const [albumMode, setAlbumMode] = useState<RankingsMode>('live')
@@ -182,6 +191,7 @@ function RankerApp({
     const results = getModel(model).rank(
       collection.items.map((i) => i.id),
       session.comparisons,
+      eloConfig,
     )
 
     const members: GroupMember[] = []
@@ -247,6 +257,7 @@ function RankerApp({
     session.comparisons,
     session.itemsById,
     groupById,
+    eloConfig,
   ])
 
   const stats = useMemo(() => {

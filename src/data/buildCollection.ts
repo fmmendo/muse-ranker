@@ -1,5 +1,37 @@
-import type { Collection, Group, Item, IsoDate } from '../domain/types'
+import {
+  DEFAULT_SETTINGS,
+  type Collection,
+  type Group,
+  type Item,
+  type IsoDate,
+  type PairSelectionWeights,
+} from '../domain/types'
 import { collectionId, groupId, itemId } from '../domain/ids'
+
+/** Optional per-dataset overrides for ranking behaviour (operator config). */
+export interface SeedConfig {
+  eloKFactor?: number
+  avoidWindow?: number
+  pairWeights?: Partial<PairSelectionWeights>
+}
+
+/** Fully-resolved ranking config (dataset overrides merged onto defaults). */
+export interface ResolvedConfig {
+  eloKFactor: number
+  avoidWindow: number
+  pairWeights: PairSelectionWeights
+}
+
+function resolveConfig(config: SeedConfig | undefined): ResolvedConfig {
+  return {
+    eloKFactor: config?.eloKFactor ?? DEFAULT_SETTINGS.eloKFactor,
+    avoidWindow: config?.avoidWindow ?? DEFAULT_SETTINGS.avoidWindow,
+    pairWeights: {
+      ...DEFAULT_SETTINGS.pairSelectionWeights,
+      ...(config?.pairWeights ?? {}),
+    },
+  }
+}
 
 // A plain, domain-agnostic description of a collection to seed. The ranking
 // engine never sees this shape — it's only used to construct the normalised
@@ -29,6 +61,7 @@ export interface GroupedCollectionSeed {
   itemLabel?: string
   itemLabelPlural?: string
   createdDate?: IsoDate
+  config?: SeedConfig
   groups: GroupSeed[]
 }
 
@@ -36,6 +69,7 @@ export interface BuiltCollection {
   collection: Collection
   groups: Group[]
   items: Item[]
+  config: ResolvedConfig
 }
 
 /** Fixed date so seed data is fully deterministic (stable ids + timestamps). */
@@ -99,5 +133,5 @@ export function buildCollection(seed: GroupedCollectionSeed): BuiltCollection {
     }
   }
 
-  return { collection, groups, items }
+  return { collection, groups, items, config: resolveConfig(seed.config) }
 }

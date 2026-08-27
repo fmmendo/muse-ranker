@@ -51,4 +51,23 @@ describe('buildCollection', () => {
     }
     expect(() => buildCollection(dupe)).toThrow(/Duplicate item id/)
   })
+
+  it('resolves config to defaults when none is given', () => {
+    const built = buildCollection(seed)
+    expect(built.config.eloKFactor).toBe(32)
+    expect(built.config.avoidWindow).toBe(40)
+    expect(built.config.pairWeights.random).toBe(0.25)
+  })
+
+  it('merges partial config overrides onto defaults', () => {
+    const built = buildCollection({
+      name: 'Cfg',
+      config: { eloKFactor: 16, pairWeights: { random: 0.5 } },
+      groups: [{ name: 'A', items: [{ name: 'X' }] }],
+    })
+    expect(built.config.eloKFactor).toBe(16) // override
+    expect(built.config.avoidWindow).toBe(40) // default kept
+    expect(built.config.pairWeights.random).toBe(0.5) // override
+    expect(built.config.pairWeights.similarRating).toBe(0.4) // default kept
+  })
 })

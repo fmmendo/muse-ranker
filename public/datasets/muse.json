@@ -2,6 +2,16 @@
   "version": 1,
   "name": "Muse",
   "description": "Rank the Muse discography, song by song.",
+  "config": {
+    "kFactor": 32,
+    "avoidWindow": 40,
+    "pairWeights": {
+      "similarRating": 0.4,
+      "lowConfidence": 0.3,
+      "random": 0.25,
+      "verification": 0.05
+    }
+  },
   "group": {
     "label": "Album",
     "labelPlural": "Albums"

@@ -88,6 +88,8 @@ export interface CollectionSettings {
   aggregationTopN: number
   pairSelectionWeights: PairSelectionWeights
   eloKFactor: number
+  /** Number of most-recent pairs the selector avoids re-presenting. */
+  avoidWindow: number
 }
 
 export const DEFAULT_SETTINGS: Omit<CollectionSettings, 'collectionId'> = {
@@ -101,4 +103,5 @@ export const DEFAULT_SETTINGS: Omit<CollectionSettings, 'collectionId'> = {
     verification: 0.05,
   },
   eloKFactor: 32,
+  avoidWindow: 40,
 }

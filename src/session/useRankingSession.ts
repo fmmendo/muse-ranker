@@ -1,20 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { BuiltCollection } from '../data/buildCollection'
-import {
-  DEFAULT_SETTINGS,
-  type Comparison,
-  type Id,
-  type Item,
-  type PairSelectionWeights,
-} from '../domain/types'
+import type { Comparison, Id, Item } from '../domain/types'
 import { DEFAULT_ELO_CONFIG, type EloConfig } from '../engine/elo'
 import { generateRanking, type RankedItem } from '../engine/ranking'
-import {
-  randomPair,
-  selectPair,
-  recentPairKeys,
-  DEFAULT_AVOID_WINDOW,
-} from '../engine/pairSelection'
+import { randomPair, selectPair, recentPairKeys } from '../engine/pairSelection'
 import { replayComparisons } from '../engine/replay'
 import { defaultRepository, type RankerRepository } from '../data/repository'
 import { colorFor } from '../data/colors'
@@ -55,14 +44,21 @@ export interface RankingSession {
  */
 export function useRankingSession(
   collection: BuiltCollection,
-  config: EloConfig = DEFAULT_ELO_CONFIG,
   repository?: RankerRepository,
 ): RankingSession {
   const repo = useMemo(() => repository ?? defaultRepository(), [repository])
   const seedDate = collection.collection.createdDate
   const collectionId = collection.collection.id
-  // Pair-selection weights are fixed for now; M10 will make them configurable.
-  const weights: PairSelectionWeights = DEFAULT_SETTINGS.pairSelectionWeights
+  // Ranking behaviour comes from the dataset's resolved config (operator-set).
+  const weights = collection.config.pairWeights
+  const avoidWindow = collection.config.avoidWindow
+  const config: EloConfig = useMemo(
+    () => ({
+      kFactor: collection.config.eloKFactor,
+      initialRating: DEFAULT_ELO_CONFIG.initialRating,
+    }),
+    [collection.config.eloKFactor],
+  )
 
   const itemsById = useMemo(
     () => new Map(collection.items.map((i) => [i.id, i])),
@@ -100,7 +96,7 @@ export function useRankingSession(
               ratings: restored,
               comparisons: stored,
               weights,
-              avoidPairKeys: recentPairKeys(stored, DEFAULT_AVOID_WINDOW),
+              avoidPairKeys: recentPairKeys(stored, avoidWindow),
             }),
           )
         }
@@ -110,7 +106,16 @@ export function useRankingSession(
     return () => {
       cancelled = true
     }
-  }, [repo, collection, collectionId, itemIds, seedDate, config, weights])
+  }, [
+    repo,
+    collection,
+    collectionId,
+    itemIds,
+    seedDate,
+    config,
+    weights,
+    avoidWindow,
+  ])
 
   const ratings = useMemo(
     () => replayComparisons(itemIds, comparisons, seedDate, config),
@@ -142,7 +147,7 @@ export function useRankingSession(
           ratings: nextRatings,
           comparisons: nextComparisons,
           weights,
-          avoidPairKeys: recentPairKeys(nextComparisons, DEFAULT_AVOID_WINDOW),
+          avoidPairKeys: recentPairKeys(nextComparisons, avoidWindow),
         }),
       )
       void repo.addComparison(comparison)
@@ -155,6 +160,7 @@ export function useRankingSession(
       seedDate,
       config,
       weights,
+      avoidWindow,
       pair,
       repo,
     ],
@@ -167,10 +173,10 @@ export function useRankingSession(
         ratings,
         comparisons,
         weights,
-        avoidPairKeys: recentPairKeys(comparisons, DEFAULT_AVOID_WINDOW),
+        avoidPairKeys: recentPairKeys(comparisons, avoidWindow),
       }),
     )
-  }, [collection.items, ratings, comparisons, weights])
+  }, [collection.items, ratings, comparisons, weights, avoidWindow])
 
   const undo = useCallback(() => {
     if (comparisons.length === 0) return

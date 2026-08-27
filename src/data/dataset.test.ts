@@ -84,4 +84,36 @@ describe('datasetToSeed', () => {
     expect(seed.itemLabel).toBe('Song')
     expect(seed.groups[0].image).toBe('/data/images/g.jpg')
   })
+
+  it('maps an optional config, dropping undefined weights', () => {
+    const dataset = parseDataset({
+      ...valid,
+      config: { kFactor: 16, pairWeights: { random: 0.5 } },
+    })
+    const seed = datasetToSeed(dataset)
+    expect(seed.config?.eloKFactor).toBe(16)
+    expect(seed.config?.pairWeights).toEqual({ random: 0.5 })
+  })
+})
+
+describe('parseDataset config', () => {
+  it('accepts a full config block', () => {
+    const d = parseDataset({
+      ...valid,
+      config: {
+        kFactor: 16,
+        avoidWindow: 20,
+        pairWeights: { random: 0.5, verification: 0 },
+      },
+    })
+    expect(d.config?.kFactor).toBe(16)
+    expect(d.config?.avoidWindow).toBe(20)
+    expect(d.config?.pairWeights?.random).toBe(0.5)
+  })
+
+  it('throws on a non-numeric config field', () => {
+    expect(() => parseDataset({ ...valid, config: { kFactor: 'x' } })).toThrow(
+      /kFactor/,
+    )
+  })
 })
