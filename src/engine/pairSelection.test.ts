@@ -4,6 +4,7 @@ import {
   kNearestByScore,
   selectPair,
   pairKey,
+  recentPairKeys,
   type PairSelectionContext,
 } from './pairSelection'
 import type { Comparison, Id, Item, Rating } from '../domain/types'
@@ -163,7 +164,7 @@ describe('selectPair', () => {
     expect(pair.map((i) => i.id).sort()).toEqual(['c', 'd'])
   })
 
-  it('terminates even when the only possible pair is the avoided one', () => {
+  it('terminates even when the only possible pair is avoided', () => {
     const two = [item('a'), item('b')]
     const [x, y] = selectPair(
       ctx({
@@ -174,10 +175,84 @@ describe('selectPair', () => {
           random: 1,
           verification: 0,
         },
-        avoidPairKey: pairKey('a', 'b'),
+        avoidPairKeys: new Set([pairKey('a', 'b')]),
       }),
       seq([0.3, 0.3, 0.3]),
     )
     expect(new Set([x.id, y.id])).toEqual(new Set(['a', 'b']))
+  })
+
+  it('avoids pairs in the recent-window set when possible', () => {
+    // random strategy over a,b,c,d; avoid every pair involving a and involving b
+    // except c–d, forcing the selector toward c–d.
+    const avoid = new Set([
+      pairKey('a', 'b'),
+      pairKey('a', 'c'),
+      pairKey('a', 'd'),
+      pairKey('b', 'c'),
+      pairKey('b', 'd'),
+    ])
+    for (let n = 0; n < 10; n++) {
+      const [x, y] = selectPair(
+        ctx({
+          weights: {
+            similarRating: 0,
+            lowConfidence: 0,
+            random: 1,
+            verification: 0,
+          },
+          avoidPairKeys: avoid,
+        }),
+        seq([n / 10, ((n * 3) % 10) / 10, 0.5, 0.1, 0.9]),
+      )
+      expect(new Set([x.id, y.id])).toEqual(new Set(['c', 'd']))
+    }
+  })
+
+  it('verification skips a pair that is in the recent window', () => {
+    const cmp = (a: string, b: string): Comparison => ({
+      id: `${a}${b}`,
+      collectionId: 'c',
+      itemAId: a,
+      itemBId: b,
+      winnerId: a,
+      timestamp: 't',
+    })
+    // Two past pairs; the recent window contains a–b, so verification must
+    // return the older c–d pair.
+    const pair = selectPair(
+      ctx({
+        comparisons: [cmp('c', 'd'), cmp('a', 'b')],
+        weights: {
+          similarRating: 0,
+          lowConfidence: 0,
+          random: 0,
+          verification: 1,
+        },
+        avoidPairKeys: new Set([pairKey('a', 'b')]),
+      }),
+      seq([0.0, 0.99, 0.0]),
+    )
+    expect(pair.map((i) => i.id).sort()).toEqual(['c', 'd'])
+  })
+})
+
+describe('recentPairKeys', () => {
+  const cmp = (a: string, b: string): Comparison => ({
+    id: `${a}${b}`,
+    collectionId: 'c',
+    itemAId: a,
+    itemBId: b,
+    winnerId: a,
+    timestamp: 't',
+  })
+
+  it('returns the keys of the last `window` comparisons', () => {
+    const comparisons = [cmp('a', 'b'), cmp('c', 'd'), cmp('e', 'f')]
+    const keys = recentPairKeys(comparisons, 2)
+    expect(keys.has(pairKey('c', 'd'))).toBe(true)
+    expect(keys.has(pairKey('e', 'f'))).toBe(true)
+    expect(keys.has(pairKey('a', 'b'))).toBe(false)
+    expect(keys.size).toBe(2)
   })
 })

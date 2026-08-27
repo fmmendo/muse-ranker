@@ -18,18 +18,33 @@ export interface PairSelectionContext {
   ratings: Map<Id, Rating>
   comparisons: readonly Comparison[]
   weights: PairSelectionWeights
-  /** Unordered key of the current pair, to avoid presenting it twice in a row. */
-  avoidPairKey?: string
+  /** Pair keys to avoid re-presenting (e.g. the last N comparisons). */
+  avoidPairKeys?: ReadonlySet<string>
 }
 
 /** How many nearest-by-score items form the pool a "similar" opponent is drawn from. */
 const NEAREST_POOL = 6
 /** How many lowest-confidence items form the pool a low-confidence anchor is drawn from. */
 const LOW_CONFIDENCE_POOL = 12
+/** Default number of most-recent pairs to avoid re-presenting. */
+export const DEFAULT_AVOID_WINDOW = 40
 
 /** Unordered, stable key for a pair of item ids. */
 export function pairKey(a: Id, b: Id): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`
+}
+
+/** The pair keys of the most recent `window` comparisons. */
+export function recentPairKeys(
+  comparisons: readonly Comparison[],
+  window: number,
+): Set<string> {
+  const keys = new Set<string>()
+  const start = Math.max(0, comparisons.length - window)
+  for (let i = start; i < comparisons.length; i++) {
+    keys.add(pairKey(comparisons[i].itemAId, comparisons[i].itemBId))
+  }
+  return keys
 }
 
 /**
@@ -138,18 +153,23 @@ function verificationPair(
 ): [Item, Item] | null {
   if (ctx.comparisons.length === 0) return null
   const byId = new Map(ctx.items.map((i) => [i.id, i]))
-  for (let attempt = 0; attempt < 8; attempt++) {
+  const avoid = ctx.avoidPairKeys
+  // Re-surface an OLDER pair (outside the recent window) so a verification
+  // repeat feels purposeful rather than immediate.
+  for (let attempt = 0; attempt < 12; attempt++) {
     const c = pickRandom(ctx.comparisons, random)
     const a = byId.get(c.itemAId)
     const b = byId.get(c.itemBId)
-    if (a && b) return [a, b]
+    if (!a || !b) continue
+    if (avoid?.has(pairKey(a.id, b.id))) continue
+    return [a, b]
   }
   return null
 }
 
 /**
  * Select the next pair by weighted strategy. Guarantees two distinct items and,
- * where possible, avoids immediately repeating the current pair.
+ * where possible, avoids re-presenting any recently-seen pair.
  */
 export function selectPair(
   ctx: PairSelectionContext,
@@ -174,11 +194,10 @@ export function selectPair(
   }
 
   let pair = build()
+  const avoid = ctx.avoidPairKeys
   for (
     let attempt = 0;
-    attempt < 8 &&
-    ctx.avoidPairKey &&
-    pairKey(pair[0].id, pair[1].id) === ctx.avoidPairKey;
+    attempt < 12 && avoid && avoid.has(pairKey(pair[0].id, pair[1].id));
     attempt++
   ) {
     pair = build()

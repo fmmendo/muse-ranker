@@ -97,8 +97,8 @@ export const DEFAULT_SETTINGS: Omit<CollectionSettings, 'collectionId'> = {
   pairSelectionWeights: {
     similarRating: 0.4,
     lowConfidence: 0.3,
-    random: 0.2,
-    verification: 0.1,
+    random: 0.25,
+    verification: 0.05,
   },
   eloKFactor: 32,
 }

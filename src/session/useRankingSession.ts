@@ -9,7 +9,12 @@ import {
 } from '../domain/types'
 import { DEFAULT_ELO_CONFIG, type EloConfig } from '../engine/elo'
 import { generateRanking, type RankedItem } from '../engine/ranking'
-import { randomPair, selectPair, pairKey } from '../engine/pairSelection'
+import {
+  randomPair,
+  selectPair,
+  recentPairKeys,
+  DEFAULT_AVOID_WINDOW,
+} from '../engine/pairSelection'
 import { replayComparisons } from '../engine/replay'
 import { defaultRepository, type RankerRepository } from '../data/repository'
 import { colorFor } from '../data/colors'
@@ -95,6 +100,7 @@ export function useRankingSession(
               ratings: restored,
               comparisons: stored,
               weights,
+              avoidPairKeys: recentPairKeys(stored, DEFAULT_AVOID_WINDOW),
             }),
           )
         }
@@ -136,7 +142,7 @@ export function useRankingSession(
           ratings: nextRatings,
           comparisons: nextComparisons,
           weights,
-          avoidPairKey: pairKey(pair[0].id, pair[1].id),
+          avoidPairKeys: recentPairKeys(nextComparisons, DEFAULT_AVOID_WINDOW),
         }),
       )
       void repo.addComparison(comparison)
@@ -161,10 +167,10 @@ export function useRankingSession(
         ratings,
         comparisons,
         weights,
-        avoidPairKey: pairKey(pair[0].id, pair[1].id),
+        avoidPairKeys: recentPairKeys(comparisons, DEFAULT_AVOID_WINDOW),
       }),
     )
-  }, [collection.items, ratings, comparisons, weights, pair])
+  }, [collection.items, ratings, comparisons, weights])
 
   const undo = useCallback(() => {
     if (comparisons.length === 0) return
