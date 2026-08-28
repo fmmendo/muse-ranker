@@ -5,9 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
-  // Served from https://fmmendo.github.io/preference-ranker/ on GitHub Pages,
-  // but from root during local dev.
-  base: command === 'build' ? '/preference-ranker/' : '/',
+  // GitHub Pages project sites serve under /<repo>/. CI sets VITE_BASE from the
+  // repo name so this same config works for any fork/template instance; local
+  // dev and preview serve from root.
+  base:
+    command === 'build'
+      ? (process.env.VITE_BASE ?? '/preference-ranker/')
+      : '/',
   plugins: [react(), tailwindcss()],
   test: {
     globals: true,

@@ -27,6 +27,10 @@ jobs:
       - run: npm ci
       - run: npm run test:run
       - run: npm run build
+        # Base path = /<repo>/ so the same code deploys correctly for any
+        # fork/template instance (e.g. /preference-ranker/, /muse-ranker/).
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
       - uses: actions/configure-pages@v5
         with:
           enablement: true

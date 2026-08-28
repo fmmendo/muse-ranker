@@ -1,8 +1,11 @@
 import { buildCollection, type BuiltCollection } from './buildCollection'
 import { parseDataset, datasetToSeed } from './dataset'
 
-/** URL of the active dataset (base-path aware for GitHub Pages). */
-export const DATASET_URL = `${import.meta.env.BASE_URL}datasets/muse.json`
+/**
+ * URL of the active dataset (base-path aware for GitHub Pages). Each deployment
+ * ships its own public/datasets/dataset.json — swap that file to re-theme.
+ */
+export const DATASET_URL = `${import.meta.env.BASE_URL}datasets/dataset.json`
 
 /** Directory portion of a URL (everything up to and including the last "/"). */
 function baseDirOf(url: string): string {
