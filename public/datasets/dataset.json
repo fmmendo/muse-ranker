@@ -343,7 +343,10 @@
           "name": "Dead Inside"
         },
         {
-          "name": "[Drill Sergeant]"
+          "name": "[Drill Sergeant]",
+          "metadata": {
+            "isInterlude": true
+          }
         },
         {
           "name": "Psycho"
