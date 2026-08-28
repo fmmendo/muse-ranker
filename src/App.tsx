@@ -14,6 +14,7 @@ import {
   type AlbumRow,
   type AlbumSort,
   type AlbumTrack,
+  type AlbumsGlobalMeta,
 } from './components/AlbumsView'
 import { StatsView } from './components/StatsView'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -102,13 +103,15 @@ function RankerApp({
   const [rankMode, setRankMode] = useState<RankingsMode>('live')
   const [rankScope, setRankScope] = useState<RankingScope>('you')
   const [albumMode, setAlbumMode] = useState<RankingsMode>('live')
+  const [albumScope, setAlbumScope] = useState<RankingScope>('you')
   const [albumSort, setAlbumSort] = useState<AlbumSort>('mean')
   const [includeBonus, setIncludeBonus] = useState(false)
 
-  // Crowd aggregate, fetched only while the Rankings "Everyone" view is showing.
+  // Crowd aggregate, fetched only while an "Everyone" view is showing.
   const aggregate = useAggregate(
     session.cloud,
-    tab === 'rankings' && rankScope === 'everyone',
+    (tab === 'rankings' && rankScope === 'everyone') ||
+      (tab === 'albums' && albumScope === 'everyone'),
   )
 
   const groupById = useMemo(
@@ -197,34 +200,103 @@ function RankerApp({
     session.comparisons,
   ])
 
-  // Crowd Bradley-Terry ranking, from the pooled aggregate tallies.
-  const globalRows = useMemo<DefinitiveRow[]>(() => {
+  // Crowd Bradley-Terry results (per song) from the pooled aggregate tallies —
+  // shared by the Rankings and Albums "Everyone" views.
+  const crowdResults = useMemo<ModelResult[]>(() => {
     if (aggregate.status !== 'ready' || !aggregate.data) return []
     const log = expandTalliesToLog(aggregate.data.pairs)
-    const results = getModel('bradley-terry').rank(
+    return getModel('bradley-terry').rank(
       collection.items.map((i) => i.id),
       log,
     )
-    return toDefinitiveRows(results)
-  }, [aggregate.status, aggregate.data, collection.items, toDefinitiveRows])
+  }, [aggregate.status, aggregate.data, collection.items])
+
+  const crowdTotalComparisons = aggregate.data
+    ? aggregate.data.pairs.reduce((s, p) => s + p.aWins + p.bWins, 0)
+    : 0
+
+  const globalRows = useMemo<DefinitiveRow[]>(
+    () => toDefinitiveRows(crowdResults),
+    [crowdResults, toDefinitiveRows],
+  )
 
   const globalView: GlobalRankingView = {
     status: aggregate.status,
     rows: globalRows,
     users: aggregate.data?.users ?? 0,
-    totalComparisons: aggregate.data
-      ? aggregate.data.pairs.reduce((s, p) => s + p.aWins + p.bWins, 0)
-      : 0,
+    totalComparisons: crowdTotalComparisons,
     onRefresh: aggregate.refresh,
   }
 
-  // Album/group aggregation + per-group ranked tracks (only on the Albums tab).
+  // Build album rows + per-group ranked tracks from a set of per-song results.
+  const buildAlbums = useCallback(
+    (results: ModelResult[]) => {
+      const members: GroupMember[] = []
+      const trackLists = new Map<string, AlbumTrack[]>()
+      for (const r of results) {
+        const item = session.itemsById.get(r.itemId)!
+        const gid = item.groupId ?? ''
+        const isBonus = item.metadata?.isBonus === true
+        members.push({
+          groupId: gid,
+          score: r.score,
+          interval95: r.interval95,
+          excluded: !includeBonus && isBonus,
+        })
+        const list = trackLists.get(gid) ?? []
+        list.push({
+          rank: 0,
+          itemId: r.itemId,
+          name: item.name,
+          score: r.score,
+          isBonus,
+          comparisonCount: r.comparisonCount,
+        })
+        trackLists.set(gid, list)
+      }
+
+      const tracksByGroup = new Map<string, AlbumTrack[]>()
+      for (const [gid, list] of trackLists) {
+        list.sort((a, b) => b.score - a.score)
+        tracksByGroup.set(
+          gid,
+          list.map((t, i) => ({ ...t, rank: i + 1 })),
+        )
+      }
+
+      const rows = aggregateByGroup(members, ALBUM_TOP_N).map((g) => {
+        const group = groupById.get(g.groupId)
+        return {
+          groupId: g.groupId,
+          name: group?.name ?? '',
+          color: group ? colorFor(group.name, group.color) : colorFor(''),
+          year: group?.metadata?.year as number | undefined,
+          meanScore: g.mean.score,
+          meanInterval: g.mean.interval95,
+          topNScore: g.topN.score,
+          topNInterval: g.topN.interval95,
+          songCount: g.mean.count,
+        }
+      })
+
+      const key = albumSort === 'mean' ? 'meanScore' : 'topNScore'
+      rows.sort((a, b) => b[key] - a[key])
+      return {
+        rows: rows.map((r, i) => ({ ...r, rank: i + 1 })),
+        tracksByGroup,
+      }
+    },
+    [session.itemsById, groupById, includeBonus, albumSort],
+  )
+
+  // Album view for the active scope (only on the Albums tab).
   const albums = useMemo(() => {
     const empty = {
       rows: [] as AlbumRow[],
       tracksByGroup: new Map<string, AlbumTrack[]>(),
     }
     if (tab !== 'albums') return empty
+    if (albumScope === 'everyone') return buildAlbums(crowdResults)
 
     const model = albumMode === 'definitive' ? 'bradley-terry' : 'elo'
     const results = getModel(model).rank(
@@ -232,72 +304,24 @@ function RankerApp({
       session.comparisons,
       eloConfig,
     )
-
-    const members: GroupMember[] = []
-    const trackLists = new Map<string, AlbumTrack[]>()
-    for (const r of results) {
-      const item = session.itemsById.get(r.itemId)!
-      const gid = item.groupId ?? ''
-      const isBonus = item.metadata?.isBonus === true
-      members.push({
-        groupId: gid,
-        score: r.score,
-        interval95: r.interval95,
-        excluded: !includeBonus && isBonus,
-      })
-      const list = trackLists.get(gid) ?? []
-      list.push({
-        rank: 0,
-        itemId: r.itemId,
-        name: item.name,
-        score: r.score,
-        isBonus,
-        comparisonCount: r.comparisonCount,
-      })
-      trackLists.set(gid, list)
-    }
-
-    const tracksByGroup = new Map<string, AlbumTrack[]>()
-    for (const [gid, list] of trackLists) {
-      list.sort((a, b) => b.score - a.score)
-      tracksByGroup.set(
-        gid,
-        list.map((t, i) => ({ ...t, rank: i + 1 })),
-      )
-    }
-
-    const rows = aggregateByGroup(members, ALBUM_TOP_N).map((g) => {
-      const group = groupById.get(g.groupId)
-      return {
-        groupId: g.groupId,
-        name: group?.name ?? '',
-        color: group ? colorFor(group.name, group.color) : colorFor(''),
-        year: group?.metadata?.year as number | undefined,
-        meanScore: g.mean.score,
-        meanInterval: g.mean.interval95,
-        topNScore: g.topN.score,
-        topNInterval: g.topN.interval95,
-        songCount: g.mean.count,
-      }
-    })
-
-    const key = albumSort === 'mean' ? 'meanScore' : 'topNScore'
-    rows.sort((a, b) => b[key] - a[key])
-    return {
-      rows: rows.map((r, i) => ({ ...r, rank: i + 1 })),
-      tracksByGroup,
-    }
+    return buildAlbums(results)
   }, [
     tab,
+    albumScope,
     albumMode,
-    albumSort,
-    includeBonus,
+    buildAlbums,
+    crowdResults,
     collection.items,
     session.comparisons,
-    session.itemsById,
-    groupById,
     eloConfig,
   ])
+
+  const albumsGlobal: AlbumsGlobalMeta = {
+    status: aggregate.status,
+    users: aggregate.data?.users ?? 0,
+    totalComparisons: crowdTotalComparisons,
+    onRefresh: aggregate.refresh,
+  }
 
   const stats = useMemo(() => {
     if (tab !== 'stats') return null
@@ -397,6 +421,9 @@ function RankerApp({
         />
       ) : tab === 'albums' ? (
         <AlbumsView
+          syncEnabled={session.cloud !== null}
+          scope={albumScope}
+          onScopeChange={setAlbumScope}
           mode={albumMode}
           onModeChange={setAlbumMode}
           includeBonus={includeBonus}
@@ -409,6 +436,7 @@ function RankerApp({
           tracksByGroup={albums.tracksByGroup}
           totalComparisons={session.totalComparisons}
           labels={labels}
+          global={albumsGlobal}
         />
       ) : (
         stats && <StatsView stats={stats} labels={labels} />

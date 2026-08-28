@@ -1,6 +1,10 @@
 import { Fragment, useState } from 'react'
 import type { Id } from '../domain/types'
-import type { DatasetLabelSet, RankingsMode } from './RankingsView'
+import type {
+  DatasetLabelSet,
+  RankingsMode,
+  RankingScope,
+} from './RankingsView'
 
 export type AlbumSort = 'mean' | 'topN'
 
@@ -26,7 +30,17 @@ export interface AlbumRow {
   songCount: number
 }
 
+export interface AlbumsGlobalMeta {
+  status: 'idle' | 'loading' | 'ready' | 'error'
+  users: number
+  totalComparisons: number
+  onRefresh: () => void
+}
+
 interface AlbumsViewProps {
+  syncEnabled: boolean
+  scope: RankingScope
+  onScopeChange: (scope: RankingScope) => void
   mode: RankingsMode
   onModeChange: (mode: RankingsMode) => void
   includeBonus: boolean
@@ -39,36 +53,59 @@ interface AlbumsViewProps {
   tracksByGroup: Map<Id, AlbumTrack[]>
   totalComparisons: number
   labels: DatasetLabelSet
+  global: AlbumsGlobalMeta
 }
 
-export function AlbumsView({
-  mode,
-  onModeChange,
-  includeBonus,
-  onIncludeBonusChange,
-  showBonusToggle,
-  sortBy,
-  onSortChange,
-  topN,
-  albums,
-  tracksByGroup,
-  totalComparisons,
-  labels,
-}: AlbumsViewProps) {
-  const definitive = mode === 'definitive'
-  const [expanded, setExpanded] = useState<Id | null>(null)
+export function AlbumsView(props: AlbumsViewProps) {
+  const {
+    syncEnabled,
+    scope,
+    onScopeChange,
+    mode,
+    onModeChange,
+    includeBonus,
+    onIncludeBonusChange,
+    showBonusToggle,
+    sortBy,
+    onSortChange,
+    topN,
+    albums,
+    tracksByGroup,
+    totalComparisons,
+    labels,
+    global,
+  } = props
+
+  const everyone = syncEnabled && scope === 'everyone'
+  // Crowd scores are Bradley-Terry (with intervals); personal follows the mode.
+  const showIntervals = everyone || mode === 'definitive'
 
   return (
     <div className="flex flex-col gap-4">
+      {syncEnabled && (
+        <div className="flex justify-center">
+          <Segmented
+            options={[
+              { value: 'you', label: 'You' },
+              { value: 'everyone', label: 'Everyone' },
+            ]}
+            value={scope}
+            onChange={(v) => onScopeChange(v as RankingScope)}
+          />
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-        <Segmented
-          options={[
-            { value: 'live', label: 'Live (Elo)' },
-            { value: 'definitive', label: 'Definitive (BT)' },
-          ]}
-          value={mode}
-          onChange={(v) => onModeChange(v as RankingsMode)}
-        />
+        {!everyone && (
+          <Segmented
+            options={[
+              { value: 'live', label: 'Live (Elo)' },
+              { value: 'definitive', label: 'Definitive (BT)' },
+            ]}
+            value={mode}
+            onChange={(v) => onModeChange(v as RankingsMode)}
+          />
+        )}
         <Segmented
           options={[
             { value: 'mean', label: 'By mean' },
@@ -90,100 +127,204 @@ export function AlbumsView({
         )}
       </div>
 
-      {totalComparisons === 0 ? (
+      {everyone ? (
+        <EveryonePanel
+          global={global}
+          albums={albums}
+          tracksByGroup={tracksByGroup}
+          sortBy={sortBy}
+          topN={topN}
+          labels={labels}
+        />
+      ) : totalComparisons === 0 ? (
         <p className="text-center text-slate-500 dark:text-slate-400">
           No comparisons yet — rank some {labels.itemPlural.toLowerCase()} and
           the {labels.groupPlural.toLowerCase()} will follow.
         </p>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-            {labels.groupPlural} scored purely from their{' '}
-            {labels.itemPlural.toLowerCase()}. <strong>Mean</strong> rewards
-            consistency; <strong>top {topN}</strong> rewards peaks. Click a{' '}
-            {labels.group.toLowerCase()} to see its ranked{' '}
-            {labels.itemPlural.toLowerCase()}.
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                  <th className="py-2 pr-2 font-medium">#</th>
-                  <th className="py-2 pr-2 font-medium">{labels.group}</th>
-                  <Th active={sortBy === 'mean'}>Mean</Th>
-                  <Th active={sortBy === 'topN'}>Top {topN}</Th>
-                  <th className="py-2 pl-2 text-right font-medium">
-                    {labels.itemPlural}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {albums.map((album) => {
-                  const isOpen = expanded === album.groupId
-                  return (
-                    <Fragment key={album.groupId}>
-                      <tr
-                        onClick={() =>
-                          setExpanded(isOpen ? null : album.groupId)
-                        }
-                        aria-expanded={isOpen}
-                        className="cursor-pointer border-b border-slate-100 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50"
-                      >
-                        <td className="py-2 pr-2 tabular-nums text-slate-500 dark:text-slate-400">
-                          {album.rank}
-                        </td>
-                        <td className="py-2 pr-2 font-medium text-slate-900 dark:text-slate-100">
-                          <span className="flex items-center gap-1.5">
-                            <span className="text-slate-400">
-                              {isOpen ? '▾' : '▸'}
-                            </span>
-                            <span
-                              className="h-2.5 w-2.5 shrink-0 rounded-full"
-                              style={{ backgroundColor: album.color }}
-                            />
-                            {album.name}
-                            {album.year ? (
-                              <span className="text-slate-500 dark:text-slate-400">
-                                ({album.year})
-                              </span>
-                            ) : null}
-                          </span>
-                        </td>
-                        <ScoreCell
-                          score={album.meanScore}
-                          interval={definitive ? album.meanInterval : undefined}
-                          emphasised={sortBy === 'mean'}
-                        />
-                        <ScoreCell
-                          score={album.topNScore}
-                          interval={definitive ? album.topNInterval : undefined}
-                          emphasised={sortBy === 'topN'}
-                        />
-                        <td className="py-2 pl-2 text-right tabular-nums text-slate-500 dark:text-slate-400">
-                          {album.songCount}
-                        </td>
-                      </tr>
-                      {isOpen && (
-                        <tr className="border-b border-slate-100 dark:border-slate-800">
-                          <td
-                            colSpan={5}
-                            className="bg-slate-50 dark:bg-slate-900/40"
-                          >
-                            <TrackList
-                              tracks={tracksByGroup.get(album.groupId) ?? []}
-                              color={album.color}
-                            />
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Blurb topN={topN} labels={labels} />
+          <AlbumTable
+            albums={albums}
+            tracksByGroup={tracksByGroup}
+            sortBy={sortBy}
+            topN={topN}
+            labels={labels}
+            showIntervals={showIntervals}
+          />
         </div>
       )}
+    </div>
+  )
+}
+
+function EveryonePanel({
+  global,
+  albums,
+  tracksByGroup,
+  sortBy,
+  topN,
+  labels,
+}: {
+  global: AlbumsGlobalMeta
+  albums: AlbumRow[]
+  tracksByGroup: Map<Id, AlbumTrack[]>
+  sortBy: AlbumSort
+  topN: number
+  labels: DatasetLabelSet
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+        {global.status === 'ready' && (
+          <span>
+            {global.users} {global.users === 1 ? 'person' : 'people'} ·{' '}
+            {global.totalComparisons} comparisons
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={global.onRefresh}
+          className="underline-offset-4 transition hover:text-slate-800 hover:underline dark:hover:text-slate-200"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {global.status === 'loading' || global.status === 'idle' ? (
+        <p className="text-center text-slate-500 dark:text-slate-400">
+          Loading the crowd’s {labels.groupPlural.toLowerCase()}…
+        </p>
+      ) : global.status === 'error' ? (
+        <p className="text-center text-slate-500 dark:text-slate-400">
+          Couldn’t load the global {labels.groupPlural.toLowerCase()}. Try
+          Refresh.
+        </p>
+      ) : albums.length === 0 ? (
+        <p className="text-center text-slate-500 dark:text-slate-400">
+          No shared comparisons yet — be the first!
+        </p>
+      ) : (
+        <>
+          <Blurb topN={topN} labels={labels} />
+          <AlbumTable
+            albums={albums}
+            tracksByGroup={tracksByGroup}
+            sortBy={sortBy}
+            topN={topN}
+            labels={labels}
+            showIntervals
+          />
+        </>
+      )}
+    </div>
+  )
+}
+
+function Blurb({ topN, labels }: { topN: number; labels: DatasetLabelSet }) {
+  return (
+    <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+      {labels.groupPlural} scored purely from their{' '}
+      {labels.itemPlural.toLowerCase()}. <strong>Mean</strong> rewards
+      consistency; <strong>top {topN}</strong> rewards peaks. Click a{' '}
+      {labels.group.toLowerCase()} to see its ranked{' '}
+      {labels.itemPlural.toLowerCase()}.
+    </p>
+  )
+}
+
+function AlbumTable({
+  albums,
+  tracksByGroup,
+  sortBy,
+  topN,
+  labels,
+  showIntervals,
+}: {
+  albums: AlbumRow[]
+  tracksByGroup: Map<Id, AlbumTrack[]>
+  sortBy: AlbumSort
+  topN: number
+  labels: DatasetLabelSet
+  showIntervals: boolean
+}) {
+  const [expanded, setExpanded] = useState<Id | null>(null)
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <th className="py-2 pr-2 font-medium">#</th>
+            <th className="py-2 pr-2 font-medium">{labels.group}</th>
+            <Th active={sortBy === 'mean'}>Mean</Th>
+            <Th active={sortBy === 'topN'}>Top {topN}</Th>
+            <th className="py-2 pl-2 text-right font-medium">
+              {labels.itemPlural}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {albums.map((album) => {
+            const isOpen = expanded === album.groupId
+            return (
+              <Fragment key={album.groupId}>
+                <tr
+                  onClick={() => setExpanded(isOpen ? null : album.groupId)}
+                  aria-expanded={isOpen}
+                  className="cursor-pointer border-b border-slate-100 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50"
+                >
+                  <td className="py-2 pr-2 tabular-nums text-slate-500 dark:text-slate-400">
+                    {album.rank}
+                  </td>
+                  <td className="py-2 pr-2 font-medium text-slate-900 dark:text-slate-100">
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-slate-400">
+                        {isOpen ? '▾' : '▸'}
+                      </span>
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: album.color }}
+                      />
+                      {album.name}
+                      {album.year ? (
+                        <span className="text-slate-500 dark:text-slate-400">
+                          ({album.year})
+                        </span>
+                      ) : null}
+                    </span>
+                  </td>
+                  <ScoreCell
+                    score={album.meanScore}
+                    interval={showIntervals ? album.meanInterval : undefined}
+                    emphasised={sortBy === 'mean'}
+                  />
+                  <ScoreCell
+                    score={album.topNScore}
+                    interval={showIntervals ? album.topNInterval : undefined}
+                    emphasised={sortBy === 'topN'}
+                  />
+                  <td className="py-2 pl-2 text-right tabular-nums text-slate-500 dark:text-slate-400">
+                    {album.songCount}
+                  </td>
+                </tr>
+                {isOpen && (
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <td
+                      colSpan={5}
+                      className="bg-slate-50 dark:bg-slate-900/40"
+                    >
+                      <TrackList
+                        tracks={tracksByGroup.get(album.groupId) ?? []}
+                        color={album.color}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
