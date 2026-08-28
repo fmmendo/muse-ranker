@@ -7,6 +7,8 @@ import { randomPair, selectPair, recentPairKeys } from '../engine/pairSelection'
 import { replayComparisons } from '../engine/replay'
 import { defaultRepository, type RankerRepository } from '../data/repository'
 import { colorFor } from '../data/colors'
+import { getUserId } from './identity'
+import { createCloudSync, type CloudSync } from '../data/cloudSync'
 
 export interface RankedRow extends RankedItem {
   item: Item
@@ -34,6 +36,8 @@ export interface RankingSession {
   itemsById: Map<Id, Item>
   /** The raw comparison log (for on-demand Bradley-Terry fitting). */
   comparisons: readonly Comparison[]
+  /** Cloud sync client when multi-user is configured, else null. */
+  cloud: CloudSync | null
 }
 
 /**
@@ -49,6 +53,20 @@ export function useRankingSession(
   const repo = useMemo(() => repository ?? defaultRepository(), [repository])
   const seedDate = collection.collection.createdDate
   const collectionId = collection.collection.id
+
+  // Cloud sync is on only when the dataset config sets a syncUrl.
+  const syncUrl = collection.config.syncUrl
+  const cloud = useMemo<CloudSync | null>(
+    () =>
+      syncUrl
+        ? createCloudSync({
+            baseUrl: syncUrl,
+            collectionId,
+            userId: getUserId(),
+          })
+        : null,
+    [syncUrl, collectionId],
+  )
   // Ranking behaviour comes from the dataset's resolved config (operator-set).
   const weights = collection.config.pairWeights
   const avoidWindow = collection.config.avoidWindow
@@ -87,6 +105,10 @@ export function useRankingSession(
       const stored = await repo.getComparisons(collectionId)
       if (!cancelled) {
         setComparisons(stored)
+        // Reconcile with the cloud (idempotent upserts; safe to re-send).
+        if (cloud && stored.length > 0) {
+          void cloud.pushComparisons(stored).catch(() => {})
+        }
         if (stored.length > 0) {
           // Pick a smart first pair based on the restored history.
           const restored = replayComparisons(itemIds, stored, seedDate, config)
@@ -115,6 +137,7 @@ export function useRankingSession(
     config,
     weights,
     avoidWindow,
+    cloud,
   ])
 
   const ratings = useMemo(
@@ -151,6 +174,7 @@ export function useRankingSession(
         }),
       )
       void repo.addComparison(comparison)
+      if (cloud) void cloud.pushComparisons([comparison]).catch(() => {})
     },
     [
       collectionId,
@@ -163,6 +187,7 @@ export function useRankingSession(
       avoidWindow,
       pair,
       repo,
+      cloud,
     ],
   )
 
@@ -186,13 +211,15 @@ export function useRankingSession(
     if (a && b) setPair([a, b]) // bring the undone pair back up to redo
     setComparisons((prev) => prev.slice(0, -1))
     void repo.deleteComparison(last.id)
-  }, [comparisons, itemsById, repo])
+    if (cloud) void cloud.deleteComparison(last.id).catch(() => {})
+  }, [comparisons, itemsById, repo, cloud])
 
   const reset = useCallback(() => {
     setComparisons([])
     setPair(randomPair(collection.items))
     void repo.clearComparisons(collectionId)
-  }, [collection.items, collectionId, repo])
+    if (cloud) void cloud.reset().catch(() => {})
+  }, [collection.items, collectionId, repo, cloud])
 
   const ranking = useMemo<RankedRow[]>(() => {
     return generateRanking([...ratings.values()]).map((ranked) => {
@@ -219,5 +246,6 @@ export function useRankingSession(
     totalComparisons: comparisons.length,
     itemsById,
     comparisons,
+    cloud,
   }
 }

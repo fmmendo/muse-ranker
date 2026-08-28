@@ -1,6 +1,6 @@
 # Cloudflare Worker API for multi-user comparison sync + aggregate ranking.
 # Deploy from the repo root:  npx wrangler deploy -c worker/wrangler.toml
-name = "preference-ranker-api"
+name = "preference-ranker-worker"
 main = "src/index.ts"
 compatibility_date = "2026-08-01"
 
@@ -9,4 +9,4 @@ compatibility_date = "2026-08-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "preference-ranker"
-database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
+database_id = "9bbb11c1-168a-40e5-9b7f-64f9feb3ec1a"

@@ -13,6 +13,7 @@ export interface SeedConfig {
   eloKFactor?: number
   avoidWindow?: number
   pairWeights?: Partial<PairSelectionWeights>
+  syncUrl?: string
 }
 
 /** Fully-resolved ranking config (dataset overrides merged onto defaults). */
@@ -20,12 +21,15 @@ export interface ResolvedConfig {
   eloKFactor: number
   avoidWindow: number
   pairWeights: PairSelectionWeights
+  /** Sync API base URL; undefined = local-only (no multi-user). */
+  syncUrl?: string
 }
 
 function resolveConfig(config: SeedConfig | undefined): ResolvedConfig {
   return {
     eloKFactor: config?.eloKFactor ?? DEFAULT_SETTINGS.eloKFactor,
     avoidWindow: config?.avoidWindow ?? DEFAULT_SETTINGS.avoidWindow,
+    syncUrl: config?.syncUrl,
     pairWeights: {
       ...DEFAULT_SETTINGS.pairSelectionWeights,
       ...(config?.pairWeights ?? {}),

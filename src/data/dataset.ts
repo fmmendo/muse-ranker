@@ -36,6 +36,8 @@ export interface DatasetConfig {
     random?: number
     verification?: number
   }
+  /** Sync API base URL. When set, multi-user sync + Global view are enabled. */
+  syncUrl?: string
 }
 
 export interface Dataset {
@@ -104,6 +106,7 @@ function parseConfig(value: unknown): DatasetConfig | undefined {
     kFactor: optionalNumber(c.kFactor, 'config.kFactor'),
     avoidWindow: optionalNumber(c.avoidWindow, 'config.avoidWindow'),
     pairWeights,
+    syncUrl: optionalString(c.syncUrl, 'config.syncUrl'),
   }
 }
 
@@ -205,6 +208,7 @@ export function datasetToSeed(
     ? {
         eloKFactor: dataset.config.kFactor,
         avoidWindow: dataset.config.avoidWindow,
+        syncUrl: dataset.config.syncUrl,
         pairWeights: dataset.config.pairWeights
           ? compact(dataset.config.pairWeights)
           : undefined,
