@@ -81,7 +81,7 @@ describe('App', () => {
     await user.click(choices[0])
 
     await user.click(screen.getByRole('button', { name: /^rankings$/i }))
-    await user.click(screen.getByRole('button', { name: /bradley/i }))
+    await user.click(screen.getByRole('button', { name: /definitive/i }))
 
     expect(screen.getByText(/order-independent fit/i)).toBeInTheDocument()
     expect(screen.getByRole('table')).toBeInTheDocument()

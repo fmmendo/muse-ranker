@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRankingSession } from './session/useRankingSession'
 import { CompareView } from './components/CompareView'
 import {
@@ -6,6 +6,8 @@ import {
   type DatasetLabelSet,
   type DefinitiveRow,
   type RankingsMode,
+  type RankingScope,
+  type GlobalRankingView,
 } from './components/RankingsView'
 import {
   AlbumsView,
@@ -16,11 +18,13 @@ import {
 import { StatsView } from './components/StatsView'
 import { ThemeToggle } from './components/ThemeToggle'
 import { useTheme } from './session/useTheme'
+import { useAggregate } from './session/useAggregate'
 import { colorFor } from './data/colors'
-import { getModel } from './engine/model'
+import { getModel, type ModelResult } from './engine/model'
 import { aggregateByGroup, type GroupMember } from './engine/aggregation'
 import { computeStats } from './engine/stats'
 import { loadCollection } from './data/loadCollection'
+import { expandTalliesToLog } from './data/cloudSync'
 import type { BuiltCollection } from './data/buildCollection'
 import type { RankerRepository } from './data/repository'
 import type { Group, Item } from './domain/types'
@@ -96,9 +100,16 @@ function RankerApp({
   )
   const [tab, setTab] = useState<Tab>('compare')
   const [rankMode, setRankMode] = useState<RankingsMode>('live')
+  const [rankScope, setRankScope] = useState<RankingScope>('you')
   const [albumMode, setAlbumMode] = useState<RankingsMode>('live')
   const [albumSort, setAlbumSort] = useState<AlbumSort>('mean')
   const [includeBonus, setIncludeBonus] = useState(false)
+
+  // Crowd aggregate, fetched only while the Rankings "Everyone" view is showing.
+  const aggregate = useAggregate(
+    session.cloud,
+    tab === 'rankings' && rankScope === 'everyone',
+  )
 
   const groupById = useMemo(
     () => new Map(collection.groups.map((g) => [g.id, g])),
@@ -137,47 +148,75 @@ function RankerApp({
     return group ? colorFor(group.name, group.color) : colorFor('')
   }
 
-  // Bradley-Terry definitive ranking (only while the definitive view shows).
+  // Turn model results into ranked definitive rows (used by both the personal
+  // and the crowd Bradley-Terry rankings).
+  const toDefinitiveRows = useCallback(
+    (results: ModelResult[]): DefinitiveRow[] => {
+      const rated = results
+        .filter((r) => r.comparisonCount > 0)
+        .sort((a, b) => b.score - a.score)
+      return rated.map((r, idx) => {
+        const item = session.itemsById.get(r.itemId)!
+        const group = item.groupId ? groupById.get(item.groupId) : undefined
+        const interval = r.interval95 ?? 0
+        const prev = idx > 0 ? rated[idx - 1] : null
+        const tie = prev
+          ? prev.score - (prev.interval95 ?? 0) <= r.score + interval
+          : false
+        return {
+          rank: idx + 1,
+          item,
+          groupName: group?.name ?? '',
+          groupColor: group ? colorFor(group.name, group.color) : colorFor(''),
+          score: r.score,
+          interval,
+          comparisonCount: r.comparisonCount,
+          tie,
+        }
+      })
+    },
+    [session.itemsById, groupById],
+  )
+
+  // Personal Bradley-Terry ranking (only while the definitive view shows).
   const definitive = useMemo(() => {
-    if (rankMode !== 'definitive') {
+    if (rankMode !== 'definitive' || rankScope !== 'you') {
       return { rows: [] as DefinitiveRow[], unranked: 0 }
     }
-    const results = getModel('bradley-terry')
-      .rank(
-        collection.items.map((i) => i.id),
-        session.comparisons,
-      )
-      .filter((r) => r.comparisonCount > 0)
-      .sort((a, b) => b.score - a.score)
-
-    const rows: DefinitiveRow[] = results.map((r, idx) => {
-      const item = session.itemsById.get(r.itemId)!
-      const group = groupOf(item)
-      const interval = r.interval95 ?? 0
-      const prev = idx > 0 ? results[idx - 1] : null
-      const tie = prev
-        ? prev.score - (prev.interval95 ?? 0) <= r.score + interval
-        : false
-      return {
-        rank: idx + 1,
-        item,
-        groupName: group?.name ?? '',
-        groupColor: group ? colorFor(group.name, group.color) : colorFor(''),
-        score: r.score,
-        interval,
-        comparisonCount: r.comparisonCount,
-        tie,
-      }
-    })
-    return { rows, unranked: collection.items.length - results.length }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const results = getModel('bradley-terry').rank(
+      collection.items.map((i) => i.id),
+      session.comparisons,
+    )
+    const rows = toDefinitiveRows(results)
+    return { rows, unranked: collection.items.length - rows.length }
   }, [
     rankMode,
+    rankScope,
+    toDefinitiveRows,
     collection.items,
     session.comparisons,
-    session.itemsById,
-    groupById,
   ])
+
+  // Crowd Bradley-Terry ranking, from the pooled aggregate tallies.
+  const globalRows = useMemo<DefinitiveRow[]>(() => {
+    if (aggregate.status !== 'ready' || !aggregate.data) return []
+    const log = expandTalliesToLog(aggregate.data.pairs)
+    const results = getModel('bradley-terry').rank(
+      collection.items.map((i) => i.id),
+      log,
+    )
+    return toDefinitiveRows(results)
+  }, [aggregate.status, aggregate.data, collection.items, toDefinitiveRows])
+
+  const globalView: GlobalRankingView = {
+    status: aggregate.status,
+    rows: globalRows,
+    users: aggregate.data?.users ?? 0,
+    totalComparisons: aggregate.data
+      ? aggregate.data.pairs.reduce((s, p) => s + p.aWins + p.bWins, 0)
+      : 0,
+    onRefresh: aggregate.refresh,
+  }
 
   // Album/group aggregation + per-group ranked tracks (only on the Albums tab).
   const albums = useMemo(() => {
@@ -344,6 +383,9 @@ function RankerApp({
         />
       ) : tab === 'rankings' ? (
         <RankingsView
+          syncEnabled={session.cloud !== null}
+          scope={rankScope}
+          onScopeChange={setRankScope}
           mode={rankMode}
           onModeChange={setRankMode}
           liveRanking={session.ranking}
@@ -351,6 +393,7 @@ function RankerApp({
           unrankedCount={definitive.unranked}
           totalComparisons={session.totalComparisons}
           labels={labels}
+          global={globalView}
         />
       ) : tab === 'albums' ? (
         <AlbumsView
@@ -369,6 +412,14 @@ function RankerApp({
         />
       ) : (
         stats && <StatsView stats={stats} labels={labels} />
+      )}
+
+      {session.cloud && (
+        <footer className="mt-auto pt-4 text-center text-xs text-slate-400">
+          Anonymous &amp; account-free — a random id is kept in your browser and
+          your comparisons are pooled to build a shared ranking. No personal
+          data.
+        </footer>
       )}
     </main>
   )

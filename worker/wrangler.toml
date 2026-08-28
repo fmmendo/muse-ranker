@@ -1,6 +1,6 @@
 # Cloudflare Worker API for multi-user comparison sync + aggregate ranking.
 # Deploy from the repo root:  npx wrangler deploy -c worker/wrangler.toml
-name = "preference-ranker-worker"
+name = "preference-ranker-api"
 main = "src/index.ts"
 compatibility_date = "2026-08-01"
 

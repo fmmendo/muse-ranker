@@ -2,6 +2,7 @@ import type { Item } from '../domain/types'
 import type { RankedRow } from '../session/useRankingSession'
 
 export type RankingsMode = 'live' | 'definitive'
+export type RankingScope = 'you' | 'everyone'
 
 export interface DatasetLabelSet {
   /** Singular item label, e.g. "Song". */
@@ -27,7 +28,18 @@ export interface DefinitiveRow {
   tie: boolean
 }
 
+export interface GlobalRankingView {
+  status: 'idle' | 'loading' | 'ready' | 'error'
+  rows: DefinitiveRow[]
+  users: number
+  totalComparisons: number
+  onRefresh: () => void
+}
+
 interface RankingsViewProps {
+  syncEnabled: boolean
+  scope: RankingScope
+  onScopeChange: (scope: RankingScope) => void
   mode: RankingsMode
   onModeChange: (mode: RankingsMode) => void
   liveRanking: RankedRow[]
@@ -35,9 +47,13 @@ interface RankingsViewProps {
   unrankedCount: number
   totalComparisons: number
   labels: DatasetLabelSet
+  global: GlobalRankingView
 }
 
 export function RankingsView({
+  syncEnabled,
+  scope,
+  onScopeChange,
   mode,
   onModeChange,
   liveRanking,
@@ -45,24 +61,63 @@ export function RankingsView({
   unrankedCount,
   totalComparisons,
   labels,
+  global,
 }: RankingsViewProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-center">
-        <div className="inline-flex gap-1 rounded-lg bg-slate-100 p-1 text-sm dark:bg-slate-800">
-          <ModeButton
-            active={mode === 'live'}
-            onClick={() => onModeChange('live')}
-          >
-            Live (Elo)
-          </ModeButton>
-          <ModeButton
-            active={mode === 'definitive'}
-            onClick={() => onModeChange('definitive')}
-          >
-            Definitive (Bradley–Terry)
-          </ModeButton>
+      {syncEnabled && (
+        <div className="flex justify-center">
+          <Segmented
+            options={[
+              { value: 'you', label: 'You' },
+              { value: 'everyone', label: 'Everyone' },
+            ]}
+            value={scope}
+            onChange={(v) => onScopeChange(v as RankingScope)}
+          />
         </div>
+      )}
+
+      {syncEnabled && scope === 'everyone' ? (
+        <GlobalPanel global={global} labels={labels} />
+      ) : (
+        <YouPanel
+          mode={mode}
+          onModeChange={onModeChange}
+          liveRanking={liveRanking}
+          definitiveRanking={definitiveRanking}
+          unrankedCount={unrankedCount}
+          totalComparisons={totalComparisons}
+          labels={labels}
+        />
+      )}
+    </div>
+  )
+}
+
+function YouPanel({
+  mode,
+  onModeChange,
+  liveRanking,
+  definitiveRanking,
+  unrankedCount,
+  totalComparisons,
+  labels,
+}: Omit<
+  RankingsViewProps,
+  'syncEnabled' | 'scope' | 'onScopeChange' | 'global'
+>) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-center">
+        <Segmented
+          options={[
+            { value: 'live', label: 'Live (Elo)' },
+            { value: 'definitive', label: 'Definitive (BT)' },
+          ]}
+          value={mode}
+          onChange={(v) => onModeChange(v as RankingsMode)}
+        />
       </div>
 
       {totalComparisons === 0 ? (
@@ -82,80 +137,50 @@ export function RankingsView({
   )
 }
 
-function ModeButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active}
-      className={
-        'rounded-md px-3 py-1 font-medium transition ' +
-        (active
-          ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100'
-          : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200')
-      }
-    >
-      {children}
-    </button>
-  )
-}
-
-function LiveTable({
-  ranking,
+function GlobalPanel({
+  global,
   labels,
 }: {
-  ranking: RankedRow[]
+  global: GlobalRankingView
   labels: DatasetLabelSet
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 text-left text-slate-500 dark:text-slate-400 dark:border-slate-700">
-            <th className="py-2 pr-2 font-medium">#</th>
-            <th className="py-2 pr-2 font-medium">{labels.item}</th>
-            <th className="py-2 pr-2 font-medium">{labels.group}</th>
-            <th className="py-2 pr-2 text-right font-medium">Score</th>
-            <th className="py-2 pr-2 text-right font-medium">W–L</th>
-            <th className="py-2 pl-2 font-medium">Confidence</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ranking.map(({ rank, rating, item, groupName, groupColor }) => (
-            <tr
-              key={rating.itemId}
-              className="border-b border-slate-100 dark:border-slate-800"
-            >
-              <td className="py-2 pr-2 tabular-nums text-slate-500 dark:text-slate-400">
-                {rank}
-              </td>
-              <td className="py-2 pr-2 font-medium text-slate-900 dark:text-slate-100">
-                {item.name}
-              </td>
-              <td className="py-2 pr-2 text-slate-500 dark:text-slate-400">
-                <GroupCell name={groupName} color={groupColor} />
-              </td>
-              <td className="py-2 pr-2 text-right tabular-nums text-slate-700 dark:text-slate-300">
-                {Math.round(rating.score)}
-              </td>
-              <td className="py-2 pr-2 text-right tabular-nums text-slate-500 dark:text-slate-400">
-                {rating.wins}–{rating.losses}
-              </td>
-              <td className="py-2 pl-2">
-                <ConfidenceBar value={rating.confidence} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+        {global.status === 'ready' && (
+          <span>
+            {global.users} {global.users === 1 ? 'person' : 'people'} ·{' '}
+            {global.totalComparisons} comparisons
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={global.onRefresh}
+          className="underline-offset-4 transition hover:text-slate-800 hover:underline dark:hover:text-slate-200"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {global.status === 'loading' || global.status === 'idle' ? (
+        <p className="text-center text-slate-500 dark:text-slate-400">
+          Loading the crowd’s ranking…
+        </p>
+      ) : global.status === 'error' ? (
+        <p className="text-center text-slate-500 dark:text-slate-400">
+          Couldn’t load the global ranking. Try Refresh.
+        </p>
+      ) : global.rows.length === 0 ? (
+        <p className="text-center text-slate-500 dark:text-slate-400">
+          No shared comparisons yet — be the first!
+        </p>
+      ) : (
+        <DefinitiveTable
+          ranking={global.rows}
+          unrankedCount={0}
+          labels={labels}
+        />
+      )}
     </div>
   )
 }
@@ -178,7 +203,7 @@ function DefinitiveTable({
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-500 dark:text-slate-400 dark:border-slate-700">
+            <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <th className="py-2 pr-2 font-medium">#</th>
               <th className="py-2 pr-2 font-medium">{labels.item}</th>
               <th className="py-2 pr-2 font-medium">{labels.group}</th>
@@ -233,6 +258,58 @@ function DefinitiveTable({
   )
 }
 
+function LiveTable({
+  ranking,
+  labels,
+}: {
+  ranking: RankedRow[]
+  labels: DatasetLabelSet
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <th className="py-2 pr-2 font-medium">#</th>
+            <th className="py-2 pr-2 font-medium">{labels.item}</th>
+            <th className="py-2 pr-2 font-medium">{labels.group}</th>
+            <th className="py-2 pr-2 text-right font-medium">Score</th>
+            <th className="py-2 pr-2 text-right font-medium">W–L</th>
+            <th className="py-2 pl-2 font-medium">Confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ranking.map(({ rank, rating, item, groupName, groupColor }) => (
+            <tr
+              key={rating.itemId}
+              className="border-b border-slate-100 dark:border-slate-800"
+            >
+              <td className="py-2 pr-2 tabular-nums text-slate-500 dark:text-slate-400">
+                {rank}
+              </td>
+              <td className="py-2 pr-2 font-medium text-slate-900 dark:text-slate-100">
+                {item.name}
+              </td>
+              <td className="py-2 pr-2 text-slate-500 dark:text-slate-400">
+                <GroupCell name={groupName} color={groupColor} />
+              </td>
+              <td className="py-2 pr-2 text-right tabular-nums text-slate-700 dark:text-slate-300">
+                {Math.round(rating.score)}
+              </td>
+              <td className="py-2 pr-2 text-right tabular-nums text-slate-500 dark:text-slate-400">
+                {rating.wins}–{rating.losses}
+              </td>
+              <td className="py-2 pl-2">
+                <ConfidenceBar value={rating.confidence} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function GroupCell({ name, color }: { name: string; color: string }) {
   return (
     <span className="flex items-center gap-1.5">
@@ -255,6 +332,37 @@ function ConfidenceBar({ value }: { value: number }) {
         className="h-full rounded-full bg-indigo-500"
         style={{ width: `${Math.round(value * 100)}%` }}
       />
+    </div>
+  )
+}
+
+function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[]
+  value: T
+  onChange: (value: T) => void
+}) {
+  return (
+    <div className="inline-flex gap-1 rounded-lg bg-slate-100 p-1 text-sm dark:bg-slate-800">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          aria-current={value === opt.value}
+          className={
+            'rounded-md px-3 py-1 font-medium transition ' +
+            (value === opt.value
+              ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100'
+              : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200')
+          }
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   )
 }

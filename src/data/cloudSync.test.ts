@@ -1,4 +1,4 @@
-import { createCloudSync } from './cloudSync'
+import { createCloudSync, expandTalliesToLog } from './cloudSync'
 import type { Comparison } from '../domain/types'
 
 const cmp = (id: string, a: string, b: string, w: string): Comparison => ({
@@ -93,5 +93,21 @@ describe('createCloudSync', () => {
     await expect(createCloudSync(opts(impl)).fetchAggregate()).rejects.toThrow(
       /aggregate failed/,
     )
+  })
+})
+
+describe('expandTalliesToLog', () => {
+  it('expands tallies into a winner-correct synthetic log', () => {
+    const log = expandTalliesToLog([
+      { itemAId: 'x', itemBId: 'y', aWins: 2, bWins: 1 },
+    ])
+    expect(log).toHaveLength(3)
+    expect(log.filter((c) => c.winnerId === 'x')).toHaveLength(2)
+    expect(log.filter((c) => c.winnerId === 'y')).toHaveLength(1)
+    expect(log.every((c) => c.itemAId === 'x' && c.itemBId === 'y')).toBe(true)
+  })
+
+  it('returns an empty log for no tallies', () => {
+    expect(expandTalliesToLog([])).toEqual([])
   })
 })

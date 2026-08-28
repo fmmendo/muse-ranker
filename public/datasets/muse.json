@@ -5,6 +5,7 @@
   "config": {
     "kFactor": 32,
     "avoidWindow": 40,
+    "syncUrl": "https://preference-ranker-api.preference-ranker-worker.workers.dev",
     "pairWeights": {
       "similarRating": 0.4,
       "lowConfidence": 0.3,

@@ -28,6 +28,33 @@ export interface CloudSync {
 /** Max comparisons per POST (matches the worker's MAX_BATCH). */
 const PUSH_BATCH = 500
 
+/**
+ * Expand pooled per-pair tallies into a synthetic comparison log that the
+ * existing Bradley-Terry engine can rank. Only winnerId + the two item ids
+ * matter to the fit (it's order-independent), so ids/timestamps are stubs.
+ */
+export function expandTalliesToLog(
+  pairs: readonly AggregatePair[],
+): Comparison[] {
+  const log: Comparison[] = []
+  let n = 0
+  const make = (a: string, b: string, winner: string): Comparison => ({
+    id: `agg-${n++}`,
+    collectionId: 'aggregate',
+    itemAId: a,
+    itemBId: b,
+    winnerId: winner,
+    timestamp: '',
+  })
+  for (const p of pairs) {
+    for (let i = 0; i < p.aWins; i++)
+      log.push(make(p.itemAId, p.itemBId, p.itemAId))
+    for (let i = 0; i < p.bWins; i++)
+      log.push(make(p.itemAId, p.itemBId, p.itemBId))
+  }
+  return log
+}
+
 export interface CloudSyncOptions {
   baseUrl: string
   collectionId: string
