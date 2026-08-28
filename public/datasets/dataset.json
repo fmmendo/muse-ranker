@@ -132,7 +132,10 @@
       },
       "items": [
         {
-          "name": "Intro"
+          "name": "Intro",
+          "metadata": {
+            "isInterlude": true
+          }
         },
         {
           "name": "Apocalypse Please"
@@ -150,7 +153,10 @@
           "name": "Falling Away with You"
         },
         {
-          "name": "Interlude"
+          "name": "Interlude",
+          "metadata": {
+            "isInterlude": true
+          }
         },
         {
           "name": "Hysteria"
@@ -291,7 +297,10 @@
           "name": "Panic Station"
         },
         {
-          "name": "Prelude"
+          "name": "Prelude",
+          "metadata": {
+            "isInterlude": true
+          }
         },
         {
           "name": "Survival"
@@ -349,7 +358,10 @@
           "name": "The Handler"
         },
         {
-          "name": "[JFK]"
+          "name": "[JFK]",
+          "metadata": {
+            "isInterlude": true
+          }
         },
         {
           "name": "Defector"
