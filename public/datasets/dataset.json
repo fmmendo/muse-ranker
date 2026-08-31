@@ -24,7 +24,7 @@
   "groups": [
     {
       "name": "Showbiz",
-      "color": "#2563eb",
+      "color": "#1C2841",
       "image": "images/showbiz.jpg",
       "metadata": {
         "year": 1999
@@ -96,7 +96,6 @@
           "name": "Uno",
           "metadata": {
             "tags": [
-              "spanish",
               "indie"
             ]
           }
@@ -152,7 +151,7 @@
     },
     {
       "name": "Origin of Symmetry",
-      "color": "#eab308",
+      "color": "#FFCC00",
       "image": "images/origin-of-symmetry.jpg",
       "metadata": {
         "year": 2001
@@ -238,7 +237,6 @@
           "name": "Darkshines",
           "metadata": {
             "tags": [
-              "spanish",
               "heavy"
             ]
           }
@@ -273,7 +271,7 @@
     },
     {
       "name": "Absolution",
-      "color": "#64748b",
+      "color": "#B5A695",
       "image": "images/absolution.jpg",
       "metadata": {
         "year": 2003
@@ -421,7 +419,7 @@
     },
     {
       "name": "Black Holes and Revelations",
-      "color": "#f97316",
+      "color": "#9B3222",
       "image": "images/black-holes-and-revelations.jpg",
       "metadata": {
         "year": 2006
@@ -508,7 +506,6 @@
           "name": "City of Delusion",
           "metadata": {
             "tags": [
-              "spanish",
               "orchestral",
               "western"
             ]
@@ -518,7 +515,6 @@
           "name": "Hoodoo",
           "metadata": {
             "tags": [
-              "spanish",
               "orchestral",
               "ballad",
               "western"
@@ -550,7 +546,7 @@
     },
     {
       "name": "The Resistance",
-      "color": "#0d9488",
+      "color": "#00E5FF",
       "image": "images/the-resistance.jpg",
       "metadata": {
         "year": 2009
@@ -664,7 +660,7 @@
     },
     {
       "name": "The 2nd Law",
-      "color": "#16a34a",
+      "color": "#39FF14",
       "image": "images/the-2nd-law.jpg",
       "metadata": {
         "year": 2012
@@ -792,7 +788,7 @@
     },
     {
       "name": "Drones",
-      "color": "#dc2626",
+      "color": "#4A4E59",
       "image": "images/drones.jpg",
       "metadata": {
         "year": 2015
@@ -905,7 +901,7 @@
     },
     {
       "name": "Simulation Theory",
-      "color": "#db2777",
+      "color": "#8A2BE2",
       "image": "images/simulation-theory.jpg",
       "metadata": {
         "year": 2018
@@ -1022,7 +1018,7 @@
     },
     {
       "name": "Will of the People",
-      "color": "#7c3aed",
+      "color": "#FF5722",
       "image": "images/will-of-the-people.jpg",
       "metadata": {
         "year": 2022
@@ -1128,7 +1124,7 @@
     },
     {
       "name": "The Wow! Signal",
-      "color": "#0891b2",
+      "color": "#FF003C",
       "image": "images/the-wow-signal.jpg",
       "metadata": {
         "year": 2026
