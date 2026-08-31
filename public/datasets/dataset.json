@@ -31,45 +31,115 @@
       },
       "items": [
         {
-          "name": "Sunburn"
+          "name": "Sunburn",
+          "metadata": {
+            "tags": [
+              "piano",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Muscle Museum"
+          "name": "Muscle Museum",
+          "metadata": {
+            "tags": [
+              "prog"
+            ]
+          }
         },
         {
-          "name": "Fillip"
+          "name": "Fillip",
+          "metadata": {
+            "tags": [
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Falling Down"
+          "name": "Falling Down",
+          "metadata": {
+            "tags": [
+              "blues",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Cave"
+          "name": "Cave",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "ambient"
+            ]
+          }
         },
         {
-          "name": "Showbiz"
+          "name": "Showbiz",
+          "metadata": {
+            "tags": [
+              "prog",
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Unintended"
+          "name": "Unintended",
+          "metadata": {
+            "tags": [
+              "acoustic",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Uno"
+          "name": "Uno",
+          "metadata": {
+            "tags": [
+              "latin"
+            ]
+          }
         },
         {
-          "name": "Sober"
+          "name": "Sober",
+          "metadata": {
+            "tags": [
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Escape"
+          "name": "Escape",
+          "metadata": {
+            "tags": [
+              "pop",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Overdue"
+          "name": "Overdue",
+          "metadata": {
+            "tags": [
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Hate This and I'll Love You"
+          "name": "Hate This and I'll Love You",
+          "metadata": {
+            "tags": [
+              "ballad",
+              "heavy"
+            ]
+          }
         },
         {
           "name": "Spiral Static",
           "metadata": {
-            "isBonus": true
+            "isBonus": true,
+            "tags": [
+              "heavy"
+            ]
           }
         }
       ]
@@ -83,42 +153,112 @@
       },
       "items": [
         {
-          "name": "New Born"
+          "name": "New Born",
+          "metadata": {
+            "tags": [
+              "prog",
+              "space",
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Bliss"
+          "name": "Bliss",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "space"
+            ]
+          }
         },
         {
-          "name": "Space Dementia"
+          "name": "Space Dementia",
+          "metadata": {
+            "tags": [
+              "piano",
+              "orchestral",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "Hyper Music"
+          "name": "Hyper Music",
+          "metadata": {
+            "tags": [
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Plug In Baby"
+          "name": "Plug In Baby",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Citizen Erased"
+          "name": "Citizen Erased",
+          "metadata": {
+            "tags": [
+              "prog",
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Micro Cuts"
+          "name": "Micro Cuts",
+          "metadata": {
+            "tags": [
+              "prog",
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Screenager"
+          "name": "Screenager",
+          "metadata": {
+            "tags": [
+              "ambient",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Darkshines"
+          "name": "Darkshines",
+          "metadata": {
+            "tags": [
+              "latin",
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Feeling Good"
+          "name": "Feeling Good",
+          "metadata": {
+            "tags": [
+              "jazz",
+              "orchestral"
+            ]
+          }
         },
         {
-          "name": "Megalomania"
+          "name": "Megalomania",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "prog"
+            ]
+          }
         },
         {
           "name": "Futurism",
           "metadata": {
-            "isBonus": true
+            "isBonus": true,
+            "tags": [
+              "heavy"
+            ]
           }
         }
       ]
@@ -138,19 +278,51 @@
           }
         },
         {
-          "name": "Apocalypse Please"
+          "name": "Apocalypse Please",
+          "metadata": {
+            "tags": [
+              "piano",
+              "orchestral",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Time Is Running Out"
+          "name": "Time Is Running Out",
+          "metadata": {
+            "tags": [
+              "funk",
+              "anthemic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Sing for Absolution"
+          "name": "Sing for Absolution",
+          "metadata": {
+            "tags": [
+              "space",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Stockholm Syndrome"
+          "name": "Stockholm Syndrome",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Falling Away with You"
+          "name": "Falling Away with You",
+          "metadata": {
+            "tags": [
+              "acoustic",
+              "ballad"
+            ]
+          }
         },
         {
           "name": "Interlude",
@@ -159,30 +331,77 @@
           }
         },
         {
-          "name": "Hysteria"
+          "name": "Hysteria",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Blackout"
+          "name": "Blackout",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Butterflies and Hurricanes"
+          "name": "Butterflies and Hurricanes",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "piano",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "The Small Print"
+          "name": "The Small Print",
+          "metadata": {
+            "tags": [
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Endlessly"
+          "name": "Endlessly",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Thoughts of a Dying Atheist"
+          "name": "Thoughts of a Dying Atheist",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Ruled by Secrecy"
+          "name": "Ruled by Secrecy",
+          "metadata": {
+            "tags": [
+              "piano",
+              "ballad",
+              "ambient"
+            ]
+          }
         },
         {
           "name": "Fury",
           "metadata": {
-            "isBonus": true
+            "isBonus": true,
+            "tags": [
+              "heavy",
+              "anthemic"
+            ]
           }
         }
       ]
@@ -196,42 +415,117 @@
       },
       "items": [
         {
-          "name": "Take a Bow"
+          "name": "Take a Bow",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Starlight"
+          "name": "Starlight",
+          "metadata": {
+            "tags": [
+              "pop",
+              "anthemic",
+              "piano"
+            ]
+          }
         },
         {
-          "name": "Supermassive Black Hole"
+          "name": "Supermassive Black Hole",
+          "metadata": {
+            "tags": [
+              "funk",
+              "electronic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Map of the Problematique"
+          "name": "Map of the Problematique",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Soldier's Poem"
+          "name": "Soldier's Poem",
+          "metadata": {
+            "tags": [
+              "acoustic",
+              "ballad",
+              "jazz"
+            ]
+          }
         },
         {
-          "name": "Invincible"
+          "name": "Invincible",
+          "metadata": {
+            "tags": [
+              "anthemic",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "Assassin"
+          "name": "Assassin",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "Exo-Politics"
+          "name": "Exo-Politics",
+          "metadata": {
+            "tags": [
+              "space",
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "City of Delusion"
+          "name": "City of Delusion",
+          "metadata": {
+            "tags": [
+              "latin",
+              "orchestral"
+            ]
+          }
         },
         {
-          "name": "Hoodoo"
+          "name": "Hoodoo",
+          "metadata": {
+            "tags": [
+              "latin",
+              "orchestral",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Knights of Cydonia"
+          "name": "Knights of Cydonia",
+          "metadata": {
+            "tags": [
+              "space",
+              "prog",
+              "anthemic"
+            ]
+          }
         },
         {
           "name": "Glorious",
           "metadata": {
-            "isBonus": true
+            "isBonus": true,
+            "tags": [
+              "anthemic",
+              "ballad"
+            ]
           }
         }
       ]
@@ -245,37 +539,108 @@
       },
       "items": [
         {
-          "name": "Uprising"
+          "name": "Uprising",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Resistance"
+          "name": "Resistance",
+          "metadata": {
+            "tags": [
+              "pop",
+              "anthemic",
+              "electronic"
+            ]
+          }
         },
         {
-          "name": "Undisclosed Desires"
+          "name": "Undisclosed Desires",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "United States of Eurasia (+Collateral Damage)"
+          "name": "United States of Eurasia (+Collateral Damage)",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "prog",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Guiding Light"
+          "name": "Guiding Light",
+          "metadata": {
+            "tags": [
+              "anthemic",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Unnatural Selection"
+          "name": "Unnatural Selection",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "MK Ultra"
+          "name": "MK Ultra",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "I Belong to You (+Mon Cœur S'ouvre à Ta Voix)"
+          "name": "I Belong to You (+Mon Cœur S'ouvre à Ta Voix)",
+          "metadata": {
+            "tags": [
+              "piano",
+              "pop",
+              "orchestral"
+            ]
+          }
         },
         {
-          "name": "Exogenesis: Symphony Part 1 (Overture)"
+          "name": "Exogenesis: Symphony Part 1 (Overture)",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "Exogenesis: Symphony Part 2 (Cross-Pollination)"
+          "name": "Exogenesis: Symphony Part 2 (Cross-Pollination)",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "prog",
+              "piano"
+            ]
+          }
         },
         {
-          "name": "Exogenesis: Symphony Part 3 (Redemption)"
+          "name": "Exogenesis: Symphony Part 3 (Redemption)",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "prog",
+              "ballad"
+            ]
+          }
         }
       ]
     },
@@ -288,13 +653,32 @@
       },
       "items": [
         {
-          "name": "Supremacy"
+          "name": "Supremacy",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "heavy",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Madness"
+          "name": "Madness",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Panic Station"
+          "name": "Panic Station",
+          "metadata": {
+            "tags": [
+              "funk",
+              "pop"
+            ]
+          }
         },
         {
           "name": "Prelude",
@@ -303,31 +687,85 @@
           }
         },
         {
-          "name": "Survival"
+          "name": "Survival",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "heavy",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Follow Me"
+          "name": "Follow Me",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Animals"
+          "name": "Animals",
+          "metadata": {
+            "tags": [
+              "prog"
+            ]
+          }
         },
         {
-          "name": "Explorers"
+          "name": "Explorers",
+          "metadata": {
+            "tags": [
+              "piano",
+              "pop",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Big Freeze"
+          "name": "Big Freeze",
+          "metadata": {
+            "tags": [
+              "anthemic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Save Me"
+          "name": "Save Me",
+          "metadata": {
+            "tags": [
+              "ambient",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "Liquid State"
+          "name": "Liquid State",
+          "metadata": {
+            "tags": [
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "The 2nd Law: Unsustainable"
+          "name": "The 2nd Law: Unsustainable",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "orchestral"
+            ]
+          }
         },
         {
-          "name": "The 2nd Law: Isolated System"
+          "name": "The 2nd Law: Isolated System",
+          "metadata": {
+            "tags": [
+              "ambient",
+              "electronic"
+            ]
+          }
         }
       ]
     },
@@ -340,7 +778,13 @@
       },
       "items": [
         {
-          "name": "Dead Inside"
+          "name": "Dead Inside",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "pop"
+            ]
+          }
         },
         {
           "name": "[Drill Sergeant]",
@@ -349,16 +793,39 @@
           }
         },
         {
-          "name": "Psycho"
+          "name": "Psycho",
+          "metadata": {
+            "tags": [
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Mercy"
+          "name": "Mercy",
+          "metadata": {
+            "tags": [
+              "pop",
+              "anthemic",
+              "piano"
+            ]
+          }
         },
         {
-          "name": "Reapers"
+          "name": "Reapers",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "The Handler"
+          "name": "The Handler",
+          "metadata": {
+            "tags": [
+              "heavy"
+            ]
+          }
         },
         {
           "name": "[JFK]",
@@ -367,19 +834,50 @@
           }
         },
         {
-          "name": "Defector"
+          "name": "Defector",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "blues"
+            ]
+          }
         },
         {
-          "name": "Revolt"
+          "name": "Revolt",
+          "metadata": {
+            "tags": [
+              "pop",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Aftermath"
+          "name": "Aftermath",
+          "metadata": {
+            "tags": [
+              "blues",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "The Globalist"
+          "name": "The Globalist",
+          "metadata": {
+            "tags": [
+              "prog",
+              "orchestral",
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Drones"
+          "name": "Drones",
+          "metadata": {
+            "tags": [
+              "orchestral",
+              "ballad"
+            ]
+          }
         }
       ]
     },
@@ -392,37 +890,111 @@
       },
       "items": [
         {
-          "name": "Algorithm"
+          "name": "Algorithm",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "orchestral"
+            ]
+          }
         },
         {
-          "name": "The Dark Side"
+          "name": "The Dark Side",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "pop",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Pressure"
+          "name": "Pressure",
+          "metadata": {
+            "tags": [
+              "funk",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Propaganda"
+          "name": "Propaganda",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "funk",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Break It to Me"
+          "name": "Break It to Me",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "funk",
+              "electronic"
+            ]
+          }
         },
         {
-          "name": "Something Human"
+          "name": "Something Human",
+          "metadata": {
+            "tags": [
+              "acoustic",
+              "pop",
+              "electronic"
+            ]
+          }
         },
         {
-          "name": "Thought Contagion"
+          "name": "Thought Contagion",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "anthemic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Get Up and Fight"
+          "name": "Get Up and Fight",
+          "metadata": {
+            "tags": [
+              "pop",
+              "electronic",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Blockades"
+          "name": "Blockades",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "prog",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Dig Down"
+          "name": "Dig Down",
+          "metadata": {
+            "tags": [
+              "pop",
+              "electronic"
+            ]
+          }
         },
         {
-          "name": "The Void"
+          "name": "The Void",
+          "metadata": {
+            "tags": [
+              "ambient",
+              "electronic",
+              "ballad"
+            ]
+          }
         }
       ]
     },
@@ -435,34 +1007,97 @@
       },
       "items": [
         {
-          "name": "Will of the People"
+          "name": "Will of the People",
+          "metadata": {
+            "tags": [
+              "anthemic",
+              "heavy"
+            ]
+          }
         },
         {
-          "name": "Compliance"
+          "name": "Compliance",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Liberation"
+          "name": "Liberation",
+          "metadata": {
+            "tags": [
+              "piano",
+              "orchestral",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Won't Stand Down"
+          "name": "Won't Stand Down",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Ghosts (How Can I Move On)"
+          "name": "Ghosts (How Can I Move On)",
+          "metadata": {
+            "tags": [
+              "piano",
+              "ballad"
+            ]
+          }
         },
         {
-          "name": "You Make Me Feel Like It's Halloween"
+          "name": "You Make Me Feel Like It's Halloween",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Kill or Be Killed"
+          "name": "Kill or Be Killed",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "Verona"
+          "name": "Verona",
+          "metadata": {
+            "tags": [
+              "electronic",
+              "ambient",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Euphoria"
+          "name": "Euphoria",
+          "metadata": {
+            "tags": [
+              "prog",
+              "anthemic",
+              "electronic"
+            ]
+          }
         },
         {
-          "name": "We Are Fucking Fucked"
+          "name": "We Are Fucking Fucked",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "electronic"
+            ]
+          }
         }
       ]
     },
@@ -475,34 +1110,94 @@
       },
       "items": [
         {
-          "name": "The Dark Forest"
+          "name": "The Dark Forest",
+          "metadata": {
+            "tags": [
+              "anthemic",
+              "space",
+              "heavy",
+              "orchestral"
+            ]
+          }
         },
         {
-          "name": "Nightshift Superstar"
+          "name": "Nightshift Superstar",
+          "metadata": {
+            "tags": [
+              "pop",
+              "electronic"
+            ]
+          }
         },
         {
-          "name": "Shimmering Scars"
+          "name": "Shimmering Scars",
+          "metadata": {
+            "tags": [
+              "ambient"
+            ]
+          }
         },
         {
-          "name": "Cryogen"
+          "name": "Cryogen",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Be with You"
+          "name": "Be with You",
+          "metadata": {
+            "tags": [
+              "pop",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Hexagons"
+          "name": "Hexagons",
+          "metadata": {
+            "tags": [
+              "anthemic",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "The Sickness in You & I"
+          "name": "The Sickness in You & I",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "prog"
+            ]
+          }
         },
         {
-          "name": "Unravelling"
+          "name": "Unravelling",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "anthemic"
+            ]
+          }
         },
         {
-          "name": "Hush"
+          "name": "Hush",
+          "metadata": {
+            "tags": [
+              "heavy",
+              "pop"
+            ]
+          }
         },
         {
-          "name": "Space Debris"
+          "name": "Space Debris",
+          "metadata": {
+            "tags": [
+              "ambient"
+            ]
+          }
         }
       ]
     }
