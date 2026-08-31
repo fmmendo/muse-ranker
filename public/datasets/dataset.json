@@ -24,7 +24,7 @@
   "groups": [
     {
       "name": "Showbiz",
-      "color": "#6366f1",
+      "color": "#2563eb",
       "image": "images/showbiz.jpg",
       "metadata": {
         "year": 1999
@@ -152,7 +152,7 @@
     },
     {
       "name": "Origin of Symmetry",
-      "color": "#06b6d4",
+      "color": "#eab308",
       "image": "images/origin-of-symmetry.jpg",
       "metadata": {
         "year": 2001
@@ -273,7 +273,7 @@
     },
     {
       "name": "Absolution",
-      "color": "#ef4444",
+      "color": "#64748b",
       "image": "images/absolution.jpg",
       "metadata": {
         "year": 2003
@@ -421,7 +421,7 @@
     },
     {
       "name": "Black Holes and Revelations",
-      "color": "#a855f7",
+      "color": "#f97316",
       "image": "images/black-holes-and-revelations.jpg",
       "metadata": {
         "year": 2006
@@ -550,7 +550,7 @@
     },
     {
       "name": "The Resistance",
-      "color": "#f59e0b",
+      "color": "#0d9488",
       "image": "images/the-resistance.jpg",
       "metadata": {
         "year": 2009
@@ -664,7 +664,7 @@
     },
     {
       "name": "The 2nd Law",
-      "color": "#22c55e",
+      "color": "#16a34a",
       "image": "images/the-2nd-law.jpg",
       "metadata": {
         "year": 2012
@@ -792,7 +792,7 @@
     },
     {
       "name": "Drones",
-      "color": "#71717a",
+      "color": "#dc2626",
       "image": "images/drones.jpg",
       "metadata": {
         "year": 2015
@@ -905,7 +905,7 @@
     },
     {
       "name": "Simulation Theory",
-      "color": "#ec4899",
+      "color": "#db2777",
       "image": "images/simulation-theory.jpg",
       "metadata": {
         "year": 2018
@@ -1022,7 +1022,7 @@
     },
     {
       "name": "Will of the People",
-      "color": "#f97316",
+      "color": "#7c3aed",
       "image": "images/will-of-the-people.jpg",
       "metadata": {
         "year": 2022
@@ -1128,7 +1128,7 @@
     },
     {
       "name": "The Wow! Signal",
-      "color": "#84cc16",
+      "color": "#0891b2",
       "image": "images/the-wow-signal.jpg",
       "metadata": {
         "year": 2026
