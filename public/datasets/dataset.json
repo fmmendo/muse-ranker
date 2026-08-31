@@ -43,7 +43,7 @@
           "name": "Muscle Museum",
           "metadata": {
             "tags": [
-              "prog"
+              "indie"
             ]
           }
         },
@@ -51,7 +51,8 @@
           "name": "Fillip",
           "metadata": {
             "tags": [
-              "heavy"
+              "heavy",
+              "indie"
             ]
           }
         },
@@ -69,7 +70,7 @@
           "metadata": {
             "tags": [
               "heavy",
-              "ambient"
+              "piano"
             ]
           }
         },
@@ -95,7 +96,8 @@
           "name": "Uno",
           "metadata": {
             "tags": [
-              "latin"
+              "spanish",
+              "indie"
             ]
           }
         },
@@ -103,7 +105,8 @@
           "name": "Sober",
           "metadata": {
             "tags": [
-              "heavy"
+              "heavy",
+              "indie"
             ]
           }
         },
@@ -112,7 +115,8 @@
           "metadata": {
             "tags": [
               "pop",
-              "ballad"
+              "ballad",
+              "indie"
             ]
           }
         },
@@ -120,7 +124,8 @@
           "name": "Overdue",
           "metadata": {
             "tags": [
-              "heavy"
+              "heavy",
+              "punk"
             ]
           }
         },
@@ -138,7 +143,8 @@
           "metadata": {
             "isBonus": true,
             "tags": [
-              "heavy"
+              "ambient",
+              "space"
             ]
           }
         }
@@ -185,7 +191,8 @@
           "name": "Hyper Music",
           "metadata": {
             "tags": [
-              "heavy"
+              "heavy",
+              "blues"
             ]
           }
         },
@@ -221,7 +228,9 @@
           "metadata": {
             "tags": [
               "ambient",
-              "ballad"
+              "ballad",
+              "acoustic",
+              "electronic"
             ]
           }
         },
@@ -229,7 +238,7 @@
           "name": "Darkshines",
           "metadata": {
             "tags": [
-              "latin",
+              "spanish",
               "heavy"
             ]
           }
@@ -238,7 +247,6 @@
           "name": "Feeling Good",
           "metadata": {
             "tags": [
-              "jazz",
               "orchestral"
             ]
           }
@@ -293,7 +301,8 @@
             "tags": [
               "funk",
               "anthemic",
-              "pop"
+              "pop",
+              "bass-driven"
             ]
           }
         },
@@ -320,7 +329,8 @@
           "metadata": {
             "tags": [
               "acoustic",
-              "ballad"
+              "ballad",
+              "electronic"
             ]
           }
         },
@@ -335,7 +345,8 @@
           "metadata": {
             "tags": [
               "heavy",
-              "anthemic"
+              "anthemic",
+              "bass-driven"
             ]
           }
         },
@@ -362,7 +373,8 @@
           "name": "The Small Print",
           "metadata": {
             "tags": [
-              "heavy"
+              "heavy",
+              "punk"
             ]
           }
         },
@@ -380,7 +392,8 @@
           "metadata": {
             "tags": [
               "heavy",
-              "anthemic"
+              "anthemic",
+              "punk"
             ]
           }
         },
@@ -439,7 +452,9 @@
             "tags": [
               "funk",
               "electronic",
-              "pop"
+              "pop",
+              "heavy",
+              "blues"
             ]
           }
         },
@@ -448,7 +463,8 @@
           "metadata": {
             "tags": [
               "electronic",
-              "anthemic"
+              "anthemic",
+              "heavy"
             ]
           }
         },
@@ -457,8 +473,7 @@
           "metadata": {
             "tags": [
               "acoustic",
-              "ballad",
-              "jazz"
+              "ballad"
             ]
           }
         },
@@ -485,7 +500,7 @@
           "metadata": {
             "tags": [
               "space",
-              "heavy"
+              "indie"
             ]
           }
         },
@@ -493,8 +508,9 @@
           "name": "City of Delusion",
           "metadata": {
             "tags": [
-              "latin",
-              "orchestral"
+              "spanish",
+              "orchestral",
+              "western"
             ]
           }
         },
@@ -502,9 +518,10 @@
           "name": "Hoodoo",
           "metadata": {
             "tags": [
-              "latin",
+              "spanish",
               "orchestral",
-              "ballad"
+              "ballad",
+              "western"
             ]
           }
         },
@@ -514,7 +531,8 @@
             "tags": [
               "space",
               "prog",
-              "anthemic"
+              "anthemic",
+              "western"
             ]
           }
         },
@@ -676,7 +694,8 @@
           "metadata": {
             "tags": [
               "funk",
-              "pop"
+              "pop",
+              "bass-driven"
             ]
           }
         },
@@ -745,7 +764,9 @@
           "name": "Liquid State",
           "metadata": {
             "tags": [
-              "heavy"
+              "heavy",
+              "bass-driven",
+              "punk"
             ]
           }
         },
@@ -796,7 +817,8 @@
           "name": "Psycho",
           "metadata": {
             "tags": [
-              "heavy"
+              "heavy",
+              "blues"
             ]
           }
         },
@@ -1057,7 +1079,8 @@
           "metadata": {
             "tags": [
               "electronic",
-              "pop"
+              "pop",
+              "heavy"
             ]
           }
         },
@@ -1095,7 +1118,9 @@
           "metadata": {
             "tags": [
               "heavy",
-              "electronic"
+              "electronic",
+              "prog",
+              "punk"
             ]
           }
         }
@@ -1125,7 +1150,9 @@
           "metadata": {
             "tags": [
               "pop",
-              "electronic"
+              "electronic",
+              "funk",
+              "bass-driven"
             ]
           }
         },
@@ -1142,7 +1169,8 @@
           "metadata": {
             "tags": [
               "heavy",
-              "anthemic"
+              "anthemic",
+              "punk"
             ]
           }
         },
@@ -1160,7 +1188,9 @@
           "metadata": {
             "tags": [
               "anthemic",
-              "prog"
+              "prog",
+              "acoustic",
+              "space"
             ]
           }
         },
@@ -1178,7 +1208,9 @@
           "metadata": {
             "tags": [
               "heavy",
-              "anthemic"
+              "anthemic",
+              "pop",
+              "electronic"
             ]
           }
         },
@@ -1187,7 +1219,8 @@
           "metadata": {
             "tags": [
               "heavy",
-              "pop"
+              "pop",
+              "anthemic"
             ]
           }
         },
